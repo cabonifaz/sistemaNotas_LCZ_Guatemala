@@ -137,3 +137,14 @@ export async function obtenerEstadisticasDashboard() {
     return { docentes: 0, estudiantes: 0, materias: 0 };
   }
 }
+
+export async function obtenerMaestroTitular(grado: number, seccion: number) {
+  try {
+    const maestro: any = await ejecutarSP('sp_obtener_maestro_titular', [grado, seccion]);
+    // Si encuentra al maestro, devuelve su nombre. Si no, devuelve el texto por defecto.
+    return maestro && maestro.length > 0 ? maestro[0].nombre_completo : "Docente no asignado";
+  } catch (error) {
+    console.error("Error obteniendo maestro:", error);
+    return "Docente no asignado";
+  }
+}

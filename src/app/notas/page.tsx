@@ -1,22 +1,24 @@
 'use client';
 import Link from 'next/link';
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation'; // 💡 1. Importamos el router
 import { obtenerEstadisticasDashboard, obtenerPermisosUsuario } from '@/app/actions';
 
 export default function DashboardPage() {
   const [stats, setStats] = useState({ docentes: 0, estudiantes: 0, materias: 0 });
   const [cargando, setCargando] = useState(true);
   
-  // 💡 ESTADO PARA GUARDAR EL ROL DEL USUARIO
+  // ESTADO PARA GUARDAR EL ROL DEL USUARIO
   const [usuario, setUsuario] = useState<any>(null);
+  
+  // 💡 2. Inicializamos el router
+  const router = useRouter();
 
   useEffect(() => {
     const cargarDatos = async () => {
-      // Cargamos las estadísticas
       const datosReales = await obtenerEstadisticasDashboard();
       setStats(datosReales);
       
-      // 💡 Cargamos los datos del usuario logueado
       const datosUsuario = await obtenerPermisosUsuario();
       setUsuario(datosUsuario);
       
@@ -35,10 +37,19 @@ export default function DashboardPage() {
     return nombre.substring(0, 2).toUpperCase();
   };
 
+  // 💡 3. Función para cerrar sesión
+  const handleCerrarSesion = () => {
+    // Borramos datos de localStorage (ajusta si usas cookies/tokens con otro nombre)
+    localStorage.removeItem('usuario');
+    localStorage.removeItem('token');
+    // Redirigimos al Login (Asumiendo que es la página raíz "/")
+    router.push('/');
+  };
+
   return (
     <div className="p-8 bg-white min-h-screen">
       
-      {/* 🔴 HEADER CON LOGO Y PERFIL DE USUARIO */}
+      {/* 🔴 HEADER CON LOGO, PERFIL Y LOGOUT */}
       <div className="flex justify-between items-center mb-8 border-b border-gray-100 pb-6">
         <div className="flex items-center space-x-4">
           <img src="/logo.png" alt="Logo Institucional" className="w-16 h-16 object-contain" />
@@ -53,19 +64,35 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* INFO DEL USUARIO DINÁMICA */}
-        <div className="flex items-center space-x-3 bg-gray-50 p-2 pr-4 rounded-2xl border border-gray-100 shadow-sm">
-          <div className="w-10 h-10 bg-[#E60000] rounded-xl flex items-center justify-center text-white font-black shadow-md shadow-red-100">
-            {usuario ? getIniciales(usuario.nombre) : '...'}
+        {/* CONTENEDOR DERECHO: INFO DEL USUARIO + BOTÓN SALIR */}
+        <div className="flex items-center space-x-4">
+          
+          {/* INFO DEL USUARIO DINÁMICA */}
+          <div className="flex items-center space-x-3 bg-gray-50 p-2 pr-4 rounded-2xl border border-gray-100 shadow-sm">
+            <div className="w-10 h-10 bg-[#E60000] rounded-xl flex items-center justify-center text-white font-black shadow-md shadow-red-100">
+              {usuario ? getIniciales(usuario.nombre) : '...'}
+            </div>
+            <div className="text-left">
+              <p className="text-[11px] font-black text-gray-800 uppercase leading-none">
+                {usuario ? usuario.nombre : 'Cargando...'}
+              </p>
+              <p className="text-[9px] font-bold text-[#E60000] uppercase tracking-tighter mt-0.5">
+                {usuario ? (usuario.rol === 'Admin' ? 'Administrador' : 'Docente') : ''}
+              </p>
+            </div>
           </div>
-          <div className="text-left">
-            <p className="text-[11px] font-black text-gray-800 uppercase leading-none">
-              {usuario ? usuario.nombre : 'Cargando...'}
-            </p>
-            <p className="text-[9px] font-bold text-[#E60000] uppercase tracking-tighter mt-0.5">
-              {usuario ? (usuario.rol === 'Admin' ? 'Administrador del Sistema' : 'Docente') : ''}
-            </p>
-          </div>
+
+          {/* 💡 4. BOTÓN DE CERRAR SESIÓN */}
+          <button
+            onClick={handleCerrarSesion}
+            title="Cerrar Sesión"
+            className="w-10 h-10 bg-white border-2 border-red-100 text-red-600 rounded-xl flex items-center justify-center hover:bg-red-600 hover:text-white hover:border-red-600 transition-all shadow-sm"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+            </svg>
+          </button>
+
         </div>
       </div>
 
@@ -90,7 +117,6 @@ export default function DashboardPage() {
         </div>
         
         <div className="flex flex-col space-y-4 mt-8 md:mt-0 md:ml-8 relative z-10">
-          {/* 💡 AQUÍ ESTÁ LA MAGIA: Estos botones SOLO se muestran si el rol es Admin */}
           {usuario?.rol === 'Admin' && (
             <>
               <Link href="/notas/estudiantes" className="px-10 py-4 bg-[#FFD700] hover:bg-yellow-400 text-yellow-900 text-xs font-black rounded-2xl shadow-lg transition-all hover:scale-105 active:scale-95 text-center">
@@ -109,7 +135,7 @@ export default function DashboardPage() {
         
         <div className="bg-white rounded-3xl p-8 shadow-sm border border-gray-100 flex flex-col justify-between h-48 hover:border-red-100 transition-colors group">
           <div className="w-12 h-12 bg-yellow-50 text-yellow-600 rounded-2xl flex items-center justify-center mb-4 group-hover:bg-yellow-100 transition-colors">
-             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M12 14l9-5-9-5-9 5 9 5z" /><path d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" /></svg>
+             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 14l9-5-9-5-9 5 9 5z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z" /></svg>
           </div>
           <div className="text-left">
             <h3 className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Estudiantes Activos</h3>

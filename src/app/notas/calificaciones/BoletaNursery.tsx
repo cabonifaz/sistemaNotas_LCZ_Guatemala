@@ -25,7 +25,7 @@ export const BoletaNursery = React.forwardRef(({ alumno, unidadActual = 3 }: any
 
   // 3. Lógica para temas según unidad
   let subtituloUnidad = "";
-  if (unidadActual === 1) subtituloUnidad = "CONOCIÉNDONOS"; 
+  if (unidadActual === 1) subtituloUnidad = "CONSTRUYENDO NUESTRA CONVIVENCIA"; 
   if (unidadActual === 2) subtituloUnidad = "DESCUBRIENDO MI ENTORNO"; 
   if (unidadActual === 3) {
     subtituloUnidad = (textoGrado === "Nursery III") ? "TEMA DE NURSERY III AQUÍ" : "CONSTRUYENDO NUESTRA CONVIVENCIA";
@@ -42,25 +42,34 @@ export const BoletaNursery = React.forwardRef(({ alumno, unidadActual = 3 }: any
         alt="Fondo Institucional"
       />
 
-      {/* 2. DATOS DEL ESTUDIANTE (Posición original intacta) */}
+     {/* 2. DATOS DEL ESTUDIANTE (Posición original intacta) */}
       <div className="absolute top-[211px] left-[440px] text-[16px] font-bold text-blue-900 uppercase italic z-10 w-[320px]">
         <p className="mb-[13px]">{alumno.nombre}</p>
         <p className="mb-[10px]">{textoGrado}</p>
-        <p>Izabel Marin</p>
+        <p>{alumno.maestro}</p> {/* ✅ AHORA SÍ LEE LA BASE DE DATOS */}
       </div>
 
-      {/* 3. Título de la Unidad (Posición original intacta) */}
-      <div className="absolute top-[374px] left-[40px] w-[200px] text-center z-20">
-        <div className="bg-white px-2 py-1 inline-block rounded-xl">
-           <h2 className="text-[28px] font-black text-red-600 leading-none">{tituloUnidad}</h2>
-           <p className="text-[9px] font-bold text-slate-500 uppercase tracking-tighter">
-             {subtituloUnidad}
-           </p>
-        </div>
-      </div>
+      {/* 3. Título de la Unidad - Versión Nursery Transparente y Compacta */}
+<div className="absolute top-[375px] left-[55px] w-[230px] text-center z-20">
+  <div className="bg-transparent inline-block">
+    <h2 className="text-[25px] font-black text-red-600 leading-none mb-1">
+      {tituloUnidad}
+    </h2>
+    
+    <p className="text-[9px] font-bold text-slate-500 uppercase tracking-tighter leading-[1.1] max-w-[110px] mx-auto">
+      {unidadActual === 3 && subtituloUnidad.includes("CONSTRUYENDO") ? (
+        <>
+          CONSTRUYENDO <br /> NUESTRA CONVIVENCIA
+        </>
+      ) : (
+        subtituloUnidad
+      )}
+    </p>
+  </div>
+</div>
 
       {/* 4. ÁREAS CURRICULARES (Posición original intacta) */}
-      <div className="absolute top-[515px] left-[50px] w-[290px] z-10">
+      <div className="absolute top-[500px] left-[60px] w-[300px] z-10">
         <table className="w-full border-collapse">
           <tbody>
             {alumno.curriculares.map((m: any, idx: number) => (
