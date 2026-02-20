@@ -3,13 +3,13 @@ import React from "react";
 export const BoletaNursery = React.forwardRef(({ alumno, unidadActual = 3 }: any, ref: any) => {
   if (!alumno) return null;
 
-  // 1. Lógica para detectar el grado (SIN TOCAR POSICIONES)
+  // 1. Lógica para detectar el grado (CON LOS IDs REALES DE LA BASE DE DATOS)
   const idGrado = alumno.id_grado?.toString() || "";
   let textoGrado = "";
   
-  if (idGrado === "31") textoGrado = "Nursery I";
-  else if (idGrado === "32") textoGrado = "Nursery II";
-  else if (idGrado === "33") textoGrado = "Nursery III";
+  if (idGrado === "11") textoGrado = "Nursery I";
+  else if (idGrado === "12") textoGrado = "Nursery II";
+  else if (idGrado === "13") textoGrado = "Nursery III";
   else {
     // Respaldo por si viene de otra forma
     const gradoString = (alumno.grado || alumno.grado_nombre || "").toLowerCase();
@@ -32,6 +32,11 @@ export const BoletaNursery = React.forwardRef(({ alumno, unidadActual = 3 }: any
   }
   if (unidadActual === 4) subtituloUnidad = "PREPARÁNDONOS PARA EL FUTURO"; 
 
+  // Validamos si trae maestro desde la base de datos
+  const nombreMaestro = alumno.maestro && alumno.maestro.trim() !== "" 
+    ? alumno.maestro 
+    : "DOCENTE NO ASIGNADO";
+
   return (
     <div ref={ref} className="relative bg-white w-[210mm] h-[297mm] text-slate-800 font-sans print:m-0 overflow-hidden">
       
@@ -42,33 +47,33 @@ export const BoletaNursery = React.forwardRef(({ alumno, unidadActual = 3 }: any
         alt="Fondo Institucional"
       />
 
-     {/* 2. DATOS DEL ESTUDIANTE (Posición original intacta) */}
+     {/* 2. DATOS DEL ESTUDIANTE */}
       <div className="absolute top-[211px] left-[440px] text-[16px] font-bold text-blue-900 uppercase italic z-10 w-[320px]">
         <p className="mb-[13px]">{alumno.nombre}</p>
         <p className="mb-[10px]">{textoGrado}</p>
-        <p>{alumno.maestro}</p> {/* ✅ AHORA SÍ LEE LA BASE DE DATOS */}
+        <p>{nombreMaestro}</p> {/* ✅ Lee correctamente el docente o pone que no hay asignado */}
       </div>
 
       {/* 3. Título de la Unidad - Versión Nursery Transparente y Compacta */}
-<div className="absolute top-[375px] left-[55px] w-[230px] text-center z-20">
-  <div className="bg-transparent inline-block">
-    <h2 className="text-[25px] font-black text-red-600 leading-none mb-1">
-      {tituloUnidad}
-    </h2>
-    
-    <p className="text-[9px] font-bold text-slate-500 uppercase tracking-tighter leading-[1.1] max-w-[110px] mx-auto">
-      {unidadActual === 3 && subtituloUnidad.includes("CONSTRUYENDO") ? (
-        <>
-          CONSTRUYENDO <br /> NUESTRA CONVIVENCIA
-        </>
-      ) : (
-        subtituloUnidad
-      )}
-    </p>
-  </div>
-</div>
+      <div className="absolute top-[375px] left-[55px] w-[230px] text-center z-20">
+        <div className="bg-transparent inline-block">
+          <h2 className="text-[25px] font-black text-red-600 leading-none mb-1">
+            {tituloUnidad}
+          </h2>
+          
+          <p className="text-[9px] font-bold text-slate-500 uppercase tracking-tighter leading-[1.1] max-w-[110px] mx-auto">
+            {unidadActual === 3 && subtituloUnidad.includes("CONSTRUYENDO") ? (
+              <>
+                CONSTRUYENDO <br /> NUESTRA CONVIVENCIA
+              </>
+            ) : (
+              subtituloUnidad
+            )}
+          </p>
+        </div>
+      </div>
 
-      {/* 4. ÁREAS CURRICULARES (Posición original intacta) */}
+      {/* 4. ÁREAS CURRICULARES */}
       <div className="absolute top-[500px] left-[60px] w-[300px] z-10">
         <table className="w-full border-collapse">
           <tbody>
@@ -84,14 +89,14 @@ export const BoletaNursery = React.forwardRef(({ alumno, unidadActual = 3 }: any
         </table>
       </div>
 
-      {/* 5. TÍTULO DE COMPORTAMIENTO (Posición original intacta) */}
+      {/* 5. TÍTULO DE COMPORTAMIENTO */}
       <div className="absolute top-[465px] left-[450px] w-[320px] z-10 text-center">
         <h3 className="bg-blue-900 text-white text-[14px] font-black uppercase py-2 rounded-t-2xl tracking-wide border-b-4 border-blue-800 leading-none">
           Comportamiento del Estudiante
         </h3>
       </div>
 
-      {/* 6. ASPECTOS DE COMPORTAMIENTO (Posición original intacta) */}
+      {/* 6. ASPECTOS DE COMPORTAMIENTO */}
       <div className="absolute top-[515px] left-[450px] w-[320px] z-10">
         <table className="w-full border-collapse">
           <tbody>

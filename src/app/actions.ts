@@ -89,21 +89,37 @@ export async function guardarCalificacion(idEstudiante: number, idMateria: numbe
 }
 
 export async function guardarCalificacionesMasivas(paqueteNotas: any[]) {
-  let guardadas = 0;
-  let errores = 0;
   try {
-    for (const nota of paqueteNotas) {
-      if (nota.idEstudiante && nota.idMateria) {
-        try {
-          await ejecutarSP('SP_NOTAS_INS', [nota.idEstudiante, nota.idMateria, nota.u1 || '', nota.u2 || '', nota.u3 || '', nota.u4 || '']);
-          guardadas++;
-        } catch (err) {
-          errores++;
-        }
-      }
+    // 1. Filtramos para asegurarnos de que no vayan datos vacíos
+    const notasValidas = paqueteNotas.filter(n => n.idEstudiante && n.idMateria);
+    let guardadas = 0;
+
+    // 2. Definimos de a cuántas notas vamos a enviar al mismo tiempo (50 es muy seguro y rápido)
+    const chunkSize = 50;
+
+    for (let i = 0; i < notasValidas.length; i += chunkSize) {
+      const chunk = notasValidas.slice(i, i + chunkSize);
+
+      // 3. LA MAGIA: Ejecutamos 50 guardados EN PARALELO al mismo tiempo
+      const promesas = chunk.map(nota => 
+        ejecutarSP('SP_NOTAS_INS', [
+          nota.idEstudiante, 
+          nota.idMateria, 
+          nota.u1 || '', 
+          nota.u2 || '', 
+          nota.u3 || '', 
+          nota.u4 || ''
+        ])
+      );
+
+      // Esperamos que estas 50 terminen juntas antes de seguir con las otras 50
+      await Promise.all(promesas);
+      guardadas += chunk.length;
     }
-    return { success: true, guardadas, errores };
+
+    return { success: true, guardadas, errores: 0 };
   } catch (error) {
+    console.error("Error masivo guardando notas:", error);
     return { success: false };
   }
 }

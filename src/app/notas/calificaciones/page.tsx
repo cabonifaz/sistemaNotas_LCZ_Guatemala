@@ -6,6 +6,7 @@ import { BoletaNursery } from "./BoletaNursery";
 import { BoletaPreKinder } from "./BoletaPreKinder";
 import { BoletaKinder } from "./BoletaKinder";
 import { BoletaPreparatoria } from "./BoletaPreparatoria";
+import { BoletaGeneral } from "./BoletaGeneral"; // 💡 Importación corregida
 
 import {
   obtenerMatrizNotas,
@@ -32,52 +33,50 @@ export default function CalificacionesPage() {
     documentTitle: `Boleta_${alumnoParaImprimir?.nombre || "Estudiante"}`,
   });
 
-  // 💡 EL DICCIONARIO MAESTRO COMPLETO (Igual que en estudiantes)
   const NIVELES = [
     {
       nivel: "Pre-Primaria",
       grados: [
-        { id: '31', nombre: 'Nursery I', secciones: [{ id: '4', label: 'Única' }] },
-        { id: '32', nombre: 'Nursery II', secciones: [{ id: '4', label: 'Única' }] },
-        { id: '33', nombre: 'Nursery III', secciones: [{ id: '4', label: 'Única' }] },
-        { id: '4', nombre: 'Pre-Kinder', secciones: [{ id: '1', label: 'A' }, { id: '2', label: 'B' }] },
-        { id: '5', nombre: 'Kinder', secciones: [{ id: '1', label: 'A' }, { id: '2', label: 'B' }] },
-        { id: '1', nombre: 'Preparatoria', secciones: [{ id: '1', label: 'A' }, { id: '2', label: 'B' }] },
-      ]
+        { id: "11", nombre: "Nursery I", secciones: [{ id: "1", label: "Única" }] },
+        { id: "12", nombre: "Nursery II", secciones: [{ id: "1", label: "Única" }] },
+        { id: "13", nombre: "Nursery III", secciones: [{ id: "1", label: "Única" }] },
+        { id: "4", nombre: "Pre-Kinder", secciones: [{ id: "1", label: "A" }, { id: "2", label: "B" }] },
+        { id: "5", nombre: "Kinder", secciones: [{ id: "1", label: "A" }, { id: "2", label: "B" }] },
+        { id: "1", nombre: "Preparatoria", secciones: [{ id: "1", label: "A" }, { id: "2", label: "B" }] },
+      ],
     },
     {
       nivel: "Primaria",
       grados: [
-        { id: '6', nombre: '1ro Primaria', secciones: [{ id: '1', label: 'A' }, { id: '2', label: 'B' }] },
-        { id: '7', nombre: '2do Primaria', secciones: [{ id: '1', label: 'A' }, { id: '2', label: 'B' }] },
-        { id: '2', nombre: '3ro Primaria', secciones: [{ id: '1', label: 'A' }, { id: '2', label: 'B' }] },
-        { id: '8', nombre: '4to Primaria', secciones: [{ id: '1', label: 'A' }, { id: '2', label: 'B' }] },
-        { id: '9', nombre: '5to Primaria', secciones: [{ id: '1', label: 'A' }, { id: '2', label: 'B' }] },
-        { id: '10', nombre: '6to Primaria', secciones: [{ id: '1', label: 'A' }, { id: '2', label: 'B' }] },
-      ]
+        { id: "6", nombre: "1ro Primaria", secciones: [{ id: "1", label: "A" }, { id: "2", label: "B" }] },
+        { id: "7", nombre: "2do Primaria", secciones: [{ id: "1", label: "A" }, { id: "2", label: "B" }] },
+        { id: "2", nombre: "3ro Primaria", secciones: [{ id: "1", label: "A" }, { id: "2", label: "B" }] },
+        { id: "8", nombre: "4to Primaria", secciones: [{ id: "1", label: "A" }, { id: "2", label: "B" }] },
+        { id: "9", nombre: "5to Primaria", secciones: [{ id: "1", label: "A" }, { id: "2", label: "B" }] },
+        { id: "10", nombre: "6to Primaria", secciones: [{ id: "1", label: "A" }, { id: "2", label: "B" }] },
+      ],
     },
     {
       nivel: "Básico",
       grados: [
-        { id: '14', nombre: 'Primero Básico', secciones: [{ id: '1', label: 'A' }, { id: '2', label: 'B' }] },
-        { id: '15', nombre: 'Segundo Básico', secciones: [{ id: '1', label: 'A' }, { id: '2', label: 'B' }] },
-        { id: '16', nombre: 'Tercero Básico', secciones: [{ id: '1', label: 'A' }, { id: '2', label: 'B' }, { id: '3', label: 'C' }] },
-      ]
+        { id: "14", nombre: "Primero Básico", secciones: [{ id: "1", label: "A" }, { id: "2", label: "B" }] },
+        { id: "15", nombre: "Segundo Básico", secciones: [{ id: "1", label: "A" }, { id: "2", label: "B" }] },
+        { id: "16", nombre: "Tercero Básico", secciones: [{ id: "1", label: "A" }, { id: "2", label: "B" }, { id: "3", label: "C" }] },
+      ],
     },
     {
       nivel: "Diversificado",
       grados: [
-        { id: '17', nombre: 'Cuarto Bachillerato', secciones: [{ id: '1', label: 'A' }, { id: '2', label: 'B' }] },
-        { id: '18', nombre: 'Quinto Bachillerato', secciones: [{ id: '4', label: 'Única' }] },
-        { id: '19', nombre: 'Cuarto Perito', secciones: [{ id: '4', label: 'Única' }] },
-        { id: '20', nombre: 'Quinto Perito', secciones: [{ id: '4', label: 'Única' }] },
-        { id: '21', nombre: 'Sexto Perito', secciones: [{ id: '4', label: 'Única' }] },
-      ]
-    }
+        { id: "17", nombre: "Cuarto Bachillerato", secciones: [{ id: "1", label: "A" }, { id: "2", label: "B" }] },
+        { id: "18", nombre: "Quinto Bachillerato", secciones: [{ id: "1", label: "Única" }] },
+        { id: "19", nombre: "Cuarto Perito", secciones: [{ id: "1", label: "Única" }] },
+        { id: "20", nombre: "Quinto Perito", secciones: [{ id: "1", label: "Única" }] },
+        { id: "21", nombre: "Sexto Perito", secciones: [{ id: "1", label: "Única" }] },
+      ],
+    },
   ];
 
-  // Buscamos el grado seleccionado para renderizar sus secciones
-  const gradoSeleccionadoObj = NIVELES.flatMap(n => n.grados).find(g => g.id === grado);
+  const gradoSeleccionadoObj = NIVELES.flatMap((n) => n.grados).find((g) => g.id === grado);
 
   useEffect(() => {
     async function cargarPermisos() {
@@ -87,7 +86,7 @@ export default function CalificacionesPage() {
     cargarPermisos();
   }, []);
 
-  // --- PLANTILLAS MAESTRAS (Mantenidas intactas para no romper las boletas) ---
+  // --- PLANTILLAS MAESTRAS DE PRE-PRIMARIA ---
   const curricularesNurseryBase = [
     { id_materia: 6, materia: "Comunicación y Lenguaje", tipo: "Texto_Prepa", u1: "", u2: "", u3: "", u4: "" },
     { id_materia: 7, materia: "Destrezas de Aprendizaje", tipo: "Texto_Prepa", u1: "", u2: "", u3: "", u4: "" },
@@ -166,35 +165,59 @@ export default function CalificacionesPage() {
     { id_materia: 78, materia: "Conducta", tipo: "Texto_Prepa", u1: "", u2: "", u3: "", u4: "" },
     { id_materia: 79, materia: "Puntualidad", tipo: "Texto_Prepa", u1: "", u2: "", u3: "", u4: "" },
   ];
+
+  // --- 💡 PLANTILLA MAESTRA PARA TODO EL RESTO DEL COLEGIO (Primaria, Básico y Diversificado) ---
+  const bloquesPrimariaBase = {
+    1: [
+      { id_materia: 104, materia: "Idioma Materno", tipo: "Numerica", u1: "", u2: "", u3: "", u4: "" },
+      { id_materia: 105, materia: "Tercer Idioma (Inglés)", tipo: "Numerica", u1: "", u2: "", u3: "", u4: "" },
+      { id_materia: 106, materia: "Matemáticas", tipo: "Numerica", u1: "", u2: "", u3: "", u4: "" },
+      { id_materia: 107, materia: "Medio Social", tipo: "Numerica", u1: "", u2: "", u3: "", u4: "" },
+      { id_materia: 108, materia: "Medio Natural", tipo: "Numerica", u1: "", u2: "", u3: "", u4: "" },
+      { id_materia: 109, materia: "Expresión Artística", tipo: "Numerica", u1: "", u2: "", u3: "", u4: "" },
+      { id_materia: 110, materia: "Educación Física", tipo: "Numerica", u1: "", u2: "", u3: "", u4: "" },
+      { id_materia: 111, materia: "Formación Ciudadana", tipo: "Numerica", u1: "", u2: "", u3: "", u4: "" },
+      { id_materia: 112, materia: "Ortografía", tipo: "Numerica", u1: "", u2: "", u3: "", u4: "" },
+      { id_materia: 113, materia: "Artes Plásticas", tipo: "Numerica", u1: "", u2: "", u3: "", u4: "" },
+      { id_materia: 114, materia: "Moral Cristiana", tipo: "Numerica", u1: "", u2: "", u3: "", u4: "" },
+      { id_materia: 115, materia: "Computación", tipo: "Numerica", u1: "", u2: "", u3: "", u4: "" },
+    ],
+    2: [
+      { id_materia: 116, materia: "Comprensión de Lectura", tipo: "Texto_Primaria", u1: "", u2: "", u3: "", u4: "" },
+      { id_materia: 117, materia: "Lógica Matemática", tipo: "Texto_Primaria", u1: "", u2: "", u3: "", u4: "" },
+    ],
+    3: [
+      { id_materia: 118, materia: "Respeta autoridad", tipo: "Texto_Primaria", u1: "", u2: "", u3: "", u4: "" },
+      { id_materia: 119, materia: "Interactúa bien con sus compañeros", tipo: "Texto_Primaria", u1: "", u2: "", u3: "", u4: "" },
+      { id_materia: 120, materia: "Respeta los derechos y propiedades de otros", tipo: "Texto_Primaria", u1: "", u2: "", u3: "", u4: "" },
+      { id_materia: 121, materia: "Demuestra control de sí mismo", tipo: "Texto_Primaria", u1: "", u2: "", u3: "", u4: "" },
+      { id_materia: 122, materia: "Acepta responsabilidad de sus acciones", tipo: "Texto_Primaria", u1: "", u2: "", u3: "", u4: "" },
+    ],
+    4: [
+      { id_materia: 123, materia: "Llega a tiempo", tipo: "Texto_Primaria", u1: "", u2: "", u3: "", u4: "" },
+      { id_materia: 124, materia: "Viene preparado para aprender", tipo: "Texto_Primaria", u1: "", u2: "", u3: "", u4: "" },
+      { id_materia: 125, materia: "Termina tareas", tipo: "Texto_Primaria", u1: "", u2: "", u3: "", u4: "" },
+      { id_materia: 126, materia: "Lee diariamente en casa", tipo: "Texto_Primaria", u1: "", u2: "", u3: "", u4: "" },
+      { id_materia: 127, materia: "Atiende junta de padres y maestros", tipo: "Texto_Primaria", u1: "", u2: "", u3: "", u4: "" },
+      { id_materia: 128, materia: "Práctica matemáticas diariamente", tipo: "Texto_Primaria", u1: "", u2: "", u3: "", u4: "" },
+      { id_materia: 129, materia: "Práctica vocabulario de inglés diariamente", tipo: "Texto_Primaria", u1: "", u2: "", u3: "", u4: "" },
+    ],
+    5: [
+      { id_materia: 130, materia: "Completa trabajo / asignatura a tiempo", tipo: "Texto_Primaria", u1: "", u2: "", u3: "", u4: "" },
+      { id_materia: 131, materia: "Regresa tareas terminadas y notas firmadas a tiempo", tipo: "Texto_Primaria", u1: "", u2: "", u3: "", u4: "" },
+      { id_materia: 132, materia: "Participa e interactúa en actividades de aprendizaje", tipo: "Texto_Primaria", u1: "", u2: "", u3: "", u4: "" },
+      { id_materia: 133, materia: "Práctica valores morales diariamente", tipo: "Texto_Primaria", u1: "", u2: "", u3: "", u4: "" },
+    ],
+  };
+
   const areasPrimaria = [
-    {
-      id: 1,
-      titulo: "1. Áreas Académicas",
-      keywords: ["idioma materno", "inglés", "matemáticas", "medio social", "medio natural", "expresión artística", "educación física", "formación ciudadana", "ortografía", "artes plásticas", "moral cristiana", "computación"],
-    },
-    {
-      id: 2,
-      titulo: "2. Programas Educativos Extracurriculares",
-      keywords: ["comprensión de lectura", "lógica matemática"],
-    },
-    {
-      id: 3,
-      titulo: "3. Responsabilidades del estudiante con su comportamiento",
-      keywords: ["respeta autoridad", "interactúa bien", "derechos y propiedades", "control de sí mismo", "acepta responsabilidad"],
-    },
-    {
-      id: 4,
-      titulo: "4. Hábitos Practicados en casa",
-      keywords: ["llega a tiempo", "preparado para aprender", "termina tareas", "lee diariamente", "atiende junta", "práctica matemáticas diariamente", "práctica vocabulario"],
-    },
-    {
-      id: 5,
-      titulo: "5. Responsabilidad del estudiante con su aprendizaje",
-      keywords: ["trabajo / asignatura", "regresa tareas", "actividades de aprendizaje", "valores morales diariamente"],
-    },
+    { id: 1, titulo: "1. Áreas Académicas" },
+    { id: 2, titulo: "2. Programas Educativos Extracurriculares" },
+    { id: 3, titulo: "3. Responsabilidades del estudiante con su comportamiento" },
+    { id: 4, titulo: "4. Hábitos Practicados en casa" },
+    { id: 5, titulo: "5. Responsabilidad del estudiante con su aprendizaje" },
   ];
 
-  // --- FUNCIONES DE SEGURIDAD SIMPLIFICADAS ---
   const puedeVerGrado = (idG: string) => {
     if (!permisos) return false;
     if (permisos.rol === "Admin" || permisos.asignaciones === "ALL") return true;
@@ -211,10 +234,14 @@ export default function CalificacionesPage() {
     if (!permisos) return false;
     if (permisos.rol === "Admin" || permisos.asignaciones === "ALL") return true;
 
-    const tieneAccesoTotal = permisos.asignaciones.some((a: any) => a.id_grado.toString() === grado && a.seccion.toString() === seccion && a.id_materia === null);
+    const tieneAccesoTotal = permisos.asignaciones.some(
+      (a: any) => a.id_grado.toString() === grado && a.seccion.toString() === seccion && a.id_materia === null
+    );
     if (tieneAccesoTotal) return true;
 
-    return permisos.asignaciones.some((a: any) => a.id_grado.toString() === grado && a.seccion.toString() === seccion && a.id_materia === idM);
+    return permisos.asignaciones.some(
+      (a: any) => a.id_grado.toString() === grado && a.seccion.toString() === seccion && a.id_materia === idM
+    );
   };
 
   const calcularPromedioUnidad = (materias: any[], unidad: string) => {
@@ -231,12 +258,10 @@ export default function CalificacionesPage() {
       alert("⚠️ Selecciona Grado y Sección.");
       return;
     }
-
     if (!puedeVerSeccion(seccion)) {
       alert("⛔ No tienes permiso para ver o editar los alumnos de esta sección.");
       return;
     }
-
     setCargando(true);
     let idGFinal = Number(grado);
     let idSFinal = Number(seccion);
@@ -247,18 +272,24 @@ export default function CalificacionesPage() {
 
       if (datos && datos.length > 0) {
         const agrupados = datos.reduce((acc: any, curr: any) => {
-          const nombre = curr.NOMBRE || `${curr.NOMBRES} ${curr.APELLIDOS}`;
-          const idAlumno = curr.ID_ALUMNO || curr.id_estudiante;
+          const nombre = curr.nombre_completo || curr.NOMBRE || `${curr.nombres} ${curr.apellidos}`;
+          const idAlumno = curr.id_alumno || curr.ID_ALUMNO;
 
-          const esNursery = [31, 32, 33].includes(idGFinal);
+          if (!idAlumno) return acc;
+
+          const esNursery = [11, 12, 13].includes(idGFinal);
           const esPreKinder = idGFinal === 4;
           const esKinder = idGFinal === 5;
           const esPreparatoria = idGFinal === 1;
           const esPrePrimaria = esNursery || esPreKinder || esKinder || esPreparatoria;
+          
+          // 💡 LA MAGIA ESTÁ AQUÍ: Si NO es Pre-Primaria, todos usan la misma plantilla General
+          const usaPlantillaGeneral = !esPrePrimaria;
 
           if (!acc[nombre]) {
             let cur: any[] = [];
             let asp: any[] = [];
+            let blqs: any = { 1: [], 2: [], 3: [], 4: [], 5: [] };
 
             if (esNursery) {
               cur = curricularesNurseryBase.map((m) => ({ ...m }));
@@ -272,6 +303,15 @@ export default function CalificacionesPage() {
             } else if (esPreparatoria) {
               cur = curricularesPreparatoriaBase.map((m) => ({ ...m }));
               asp = aspectosPreparatoriaBase.map((m) => ({ ...m }));
+            } else if (usaPlantillaGeneral) {
+              // 💡 INYECTAMOS LA MISMA PLANTILLA PARA PRIMARIA, BÁSICO Y DIVERSIFICADO
+              blqs = {
+                1: bloquesPrimariaBase[1].map((m) => ({ ...m })),
+                2: bloquesPrimariaBase[2].map((m) => ({ ...m })),
+                3: bloquesPrimariaBase[3].map((m) => ({ ...m })),
+                4: bloquesPrimariaBase[4].map((m) => ({ ...m })),
+                5: bloquesPrimariaBase[5].map((m) => ({ ...m })),
+              };
             }
 
             acc[nombre] = {
@@ -280,51 +320,35 @@ export default function CalificacionesPage() {
               maestro: nombreMaestraBD,
               curriculares: cur,
               aspectos: asp,
-              bloques: { 1: [], 2: [], 3: [], 4: [], 5: [] },
+              bloques: blqs,
               id_grado: idGFinal,
             };
           }
 
           const idMateria = Number(curr.ID_MATERIA || curr.id_materia);
-          const u1 = curr.U1 || "";
-          const u2 = curr.U2 || "";
-          const u3 = curr.U3 || "";
-          const u4 = curr.U4 || "";
+          if (!idMateria) return acc; 
+
+          const u1 = curr.U1 || curr.unidad_1 || "";
+          const u2 = curr.U2 || curr.unidad_2 || "";
+          const u3 = curr.U3 || curr.unidad_3 || "";
+          const u4 = curr.U4 || curr.unidad_4 || "";
 
           if (esPrePrimaria) {
-            const materiaNombreDB = (curr.MATERIA || curr.nombre_materia || "").trim().toLowerCase();
-            const itemCurricular = acc[nombre].curriculares.find((m: any) => m.id_materia === idMateria || m.materia.trim().toLowerCase() === materiaNombreDB);
+            const itemCurricular = acc[nombre].curriculares.find((m: any) => m.id_materia === idMateria);
             if (itemCurricular) {
-              itemCurricular.id_materia = idMateria;
               itemCurricular.u1 = u1; itemCurricular.u2 = u2; itemCurricular.u3 = u3; itemCurricular.u4 = u4;
             }
-            const itemAspecto = acc[nombre].aspectos.find((m: any) => m.id_materia === idMateria || m.materia.trim().toLowerCase() === materiaNombreDB);
+            const itemAspecto = acc[nombre].aspectos.find((m: any) => m.id_materia === idMateria);
             if (itemAspecto) {
-              itemAspecto.id_materia = idMateria;
               itemAspecto.u1 = u1; itemAspecto.u2 = u2; itemAspecto.u3 = u3; itemAspecto.u4 = u4;
             }
-          } else {
-            let areaId: number | null = null;
-            const materiaNombre = (curr.MATERIA || curr.nombre_materia || "").trim();
-            const mLower = materiaNombre.toLowerCase();
-            areasPrimaria.forEach((a) => {
-              if (a.keywords.some((k) => mLower.includes(k))) areaId = a.id;
-            });
-
-            if (areaId) {
-              const itemExistente = acc[nombre].bloques[areaId].find((m: any) => m.materia.toLowerCase() === mLower);
-              if (itemExistente) {
-                if (u1) itemExistente.u1 = u1; if (u2) itemExistente.u2 = u2; if (u3) itemExistente.u3 = u3; if (u4) itemExistente.u4 = u4;
-              } else {
-                const itemPrimaria = {
-                  id_materia: idMateria,
-                  materia: materiaNombre,
-                  tipo: areaId === 1 ? "Numerica" : "Texto_Primaria",
-                  u1, u2, u3, u4,
-                };
-                acc[nombre].bloques[areaId].push(itemPrimaria);
-                if (areaId === 1) acc[nombre].curriculares.push(itemPrimaria);
-                else acc[nombre].aspectos.push(itemPrimaria);
+          } else if (usaPlantillaGeneral) {
+            // Buscamos en qué bloque pertenece y le asignamos la nota a TODOS los grados mayores
+            for (let i = 1; i <= 5; i++) {
+              const item = acc[nombre].bloques[i].find((m: any) => m.id_materia === idMateria);
+              if (item) {
+                item.u1 = u1; item.u2 = u2; item.u3 = u3; item.u4 = u4;
+                break;
               }
             }
           }
@@ -333,7 +357,7 @@ export default function CalificacionesPage() {
         setEstudiantesAgrupados(Object.values(agrupados));
       } else {
         setEstudiantesAgrupados([]);
-        alert("ℹ️ No hay alumnos con notas registradas en este nivel.");
+        alert("ℹ️ No hay alumnos registrados en este nivel.");
       }
     } finally {
       setCargando(false);
@@ -350,7 +374,7 @@ export default function CalificacionesPage() {
           return { ...est, curriculares: up(est.curriculares), aspectos: up(est.aspectos), bloques: newB };
         }
         return est;
-      }),
+      })
     );
   };
 
@@ -358,24 +382,48 @@ export default function CalificacionesPage() {
     setGuardando(true);
     try {
       const datosAEnviar: any[] = [];
+
       estudiantesAgrupados.forEach((e) => {
         const mats = [...e.curriculares, ...e.aspectos];
         Object.values(e.bloques).forEach((b: any) => mats.push(...b));
         const unicos = Array.from(new Map(mats.map((m) => [m.id_materia, m])).values());
         const academicas = e.bloques[1] || [];
-        const promedios = { u1: calcularPromedioUnidad(academicas, "u1"), u2: calcularPromedioUnidad(academicas, "u2"), u3: calcularPromedioUnidad(academicas, "u3"), u4: calcularPromedioUnidad(academicas, "u4") };
+        const promedios = {
+          u1: calcularPromedioUnidad(academicas, "u1"),
+          u2: calcularPromedioUnidad(academicas, "u2"),
+          u3: calcularPromedioUnidad(academicas, "u3"),
+          u4: calcularPromedioUnidad(academicas, "u4"),
+        };
 
         unicos.forEach((m: any) => {
-          datosAEnviar.push({ idEstudiante: e.id_alumno, idMateria: m.id_materia, u1: m.u1, u2: m.u2, u3: m.u3, u4: m.u4 });
+          datosAEnviar.push({
+            idEstudiante: e.id_alumno,
+            idMateria: m.id_materia,
+            u1: m.u1 || "", u2: m.u2 || "", u3: m.u3 || "", u4: m.u4 || "",
+          });
         });
-        datosAEnviar.push({ idEstudiante: e.id_alumno, idMateria: 500, u1: promedios.u1.toString(), u2: promedios.u2.toString(), u3: promedios.u3.toString(), u4: promedios.u4.toString() });
+
+        datosAEnviar.push({
+          idEstudiante: e.id_alumno,
+          idMateria: 500, // ID Oficial del Promedio
+          u1: promedios.u1.toString(),
+          u2: promedios.u2.toString(),
+          u3: promedios.u3.toString(),
+          u4: promedios.u4.toString(),
+        });
       });
 
-      await guardarCalificacionesMasivas(datosAEnviar);
+      const tamanoPaquete = 25;
+      for (let i = 0; i < datosAEnviar.length; i += tamanoPaquete) {
+        const paquete = datosAEnviar.slice(i, i + tamanoPaquete);
+        await guardarCalificacionesMasivas(paquete);
+        await new Promise((resolve) => setTimeout(resolve, 300));
+      }
+
       alert("✅ Calificaciones guardadas con éxito.");
     } catch (error) {
-      console.error(error);
-      alert("❌ Error al guardar.");
+      console.error("Error al guardar:", error);
+      alert("❌ Hubo un error de conexión, recarga la página para verificar.");
     } finally {
       setGuardando(false);
     }
@@ -412,30 +460,20 @@ export default function CalificacionesPage() {
   return (
     <div className="min-h-screen bg-slate-50 font-sans text-slate-900 pb-20">
       <header className="bg-red-700 text-white shadow-lg p-6 flex justify-between items-center sticky top-0 z-50">
-        <h1 className="text-xl font-black uppercase tracking-tight leading-none">
-          Liceo Cristiano Zacapaneco
-        </h1>
-        <Link href="/notas" className="px-6 py-2 bg-white text-red-700 rounded-xl font-black text-xs uppercase shadow-md">
-          Menú
-        </Link>
+        <h1 className="text-xl font-black uppercase tracking-tight leading-none">Liceo Cristiano Zacapaneco</h1>
+        <Link href="/notas" className="px-6 py-2 bg-white text-red-700 rounded-xl font-black text-xs uppercase shadow-md">Menú</Link>
       </header>
 
       <main className="max-w-7xl mx-auto px-6 py-10">
         <div className="bg-white rounded-[2rem] shadow-sm border border-gray-100 p-8 mb-10 flex flex-col md:flex-row items-end gap-6">
-          
-          {/* 💡 SELECTOR DE GRADO INTELIGENTE */}
           <div className="flex-1 w-full text-left">
-            <label className="block text-gray-400 font-black mb-2 text-[10px] uppercase ml-1">
-              Grado Académico
-            </label>
+            <label className="block text-gray-400 font-black mb-2 text-[10px] uppercase ml-1">Grado Académico</label>
             <select
               value={grado}
               onChange={(e) => {
                 const nuevoGrado = e.target.value;
                 setGrado(nuevoGrado);
-                
-                // Autoseleccionar la primera sección disponible
-                const obj = NIVELES.flatMap(n => n.grados).find(g => g.id === nuevoGrado);
+                const obj = NIVELES.flatMap((n) => n.grados).find((g) => g.id === nuevoGrado);
                 if (obj && obj.secciones.length > 0) {
                   setSeccion(obj.secciones[0].id);
                 } else {
@@ -449,10 +487,7 @@ export default function CalificacionesPage() {
               {NIVELES.map((nivel) => (
                 <optgroup key={nivel.nivel} label={nivel.nivel.toUpperCase()}>
                   {nivel.grados.map((g) => {
-                    // Filtrado de seguridad: solo muestra los grados que el usuario tiene permitidos ver
-                    if(puedeVerGrado(g.id)){
-                       return <option key={g.id} value={g.id}>{g.nombre}</option>
-                    }
+                    if (puedeVerGrado(g.id)) return <option key={g.id} value={g.id}>{g.nombre}</option>;
                     return null;
                   })}
                 </optgroup>
@@ -460,36 +495,21 @@ export default function CalificacionesPage() {
             </select>
           </div>
 
-          {/* 💡 SELECTOR DE SECCIÓN INTELIGENTE */}
           <div className="w-full md:w-48 text-left">
-            <label className="block text-gray-400 font-black mb-2 text-[10px] uppercase ml-1">
-              Sección
-            </label>
-            <select
-              value={seccion}
-              onChange={(e) => setSeccion(e.target.value)}
-              disabled={!gradoSeleccionadoObj}
-              className="w-full p-4 border-2 border-gray-100 rounded-2xl font-black text-sm bg-gray-50 disabled:opacity-50 outline-none text-gray-700"
-            >
+            <label className="block text-gray-400 font-black mb-2 text-[10px] uppercase ml-1">Sección</label>
+            <select value={seccion} onChange={(e) => setSeccion(e.target.value)} disabled={!gradoSeleccionadoObj} className="w-full p-4 border-2 border-gray-100 rounded-2xl font-black text-sm bg-gray-50 disabled:opacity-50 outline-none text-gray-700">
               {!gradoSeleccionadoObj && <option value="">-</option>}
               {gradoSeleccionadoObj?.secciones.map((sec) => (
-                <option key={sec.id} value={sec.id}>
-                  {sec.label === 'Única' ? 'Única' : `Sección ${sec.label}`}
-                </option>
+                <option key={sec.id} value={sec.id}>{sec.label === "Única" ? "Única" : `Sección ${sec.label}`}</option>
               ))}
             </select>
           </div>
 
-          <button
-            onClick={handleCargarAlumnos}
-            disabled={cargando}
-            className="px-10 h-[58px] bg-red-600 text-white rounded-2xl font-black shadow-lg hover:bg-red-700 transition-all uppercase text-xs"
-          >
+          <button onClick={handleCargarAlumnos} disabled={cargando} className="px-10 h-[58px] bg-red-600 text-white rounded-2xl font-black shadow-lg hover:bg-red-700 transition-all uppercase text-xs">
             {cargando ? "Cargando..." : "Listar Alumnos"}
           </button>
         </div>
 
-        {/* ... EL RESTO DEL CÓDIGO PERMANECE EXACTAMENTE IGUAL ... */}
         {estudiantesAgrupados.length > 0 && (
           <div className="sticky top-[85px] z-40 mb-8 px-2">
             <div className="bg-white/90 backdrop-blur-md border-2 border-red-600 shadow-[0_15px_30px_-10px_rgba(220,38,38,0.2)] rounded-3xl p-3 flex items-center justify-between">
@@ -498,24 +518,13 @@ export default function CalificacionesPage() {
                   <span className="text-red-600 text-lg">📝</span>
                 </div>
                 <div className="flex flex-col">
-                  <span className="text-slate-400 font-black text-[9px] uppercase tracking-tighter">
-                    Planilla Digital
-                  </span>
-                  <span className="text-slate-800 font-black text-sm uppercase">
-                    {estudiantesAgrupados.length} Alumnos en lista
-                  </span>
+                  <span className="text-slate-400 font-black text-[9px] uppercase tracking-tighter">Planilla Digital</span>
+                  <span className="text-slate-800 font-black text-sm uppercase">{estudiantesAgrupados.length} Alumnos en lista</span>
                 </div>
               </div>
-              <button
-                onClick={handleGuardarNotas}
-                disabled={guardando}
-                className="mr-2 flex items-center gap-3 px-12 py-4 bg-red-600 hover:bg-red-700 text-white rounded-2xl font-black text-xs uppercase tracking-widest shadow-md transition-all active:scale-95 disabled:opacity-50 disabled:pointer-events-none"
-              >
+              <button onClick={handleGuardarNotas} disabled={guardando} className="mr-2 flex items-center gap-3 px-12 py-4 bg-red-600 hover:bg-red-700 text-white rounded-2xl font-black text-xs uppercase tracking-widest shadow-md transition-all active:scale-95 disabled:opacity-50 disabled:pointer-events-none">
                 {guardando ? (
-                  <>
-                    <div className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin" />
-                    <span>Guardando...</span>
-                  </>
+                  <><div className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin" /><span>Guardando...</span></>
                 ) : (
                   <span>Guardar Notas</span>
                 )}
@@ -526,17 +535,14 @@ export default function CalificacionesPage() {
 
         {estudiantesAgrupados.map((est, index) => {
           const estaAbierto = expandidos.includes(est.id_alumno);
-          const esPreVisual = ["31", "32", "33", "4", "5", "1"].includes(est.id_grado.toString());
+          const esPreVisual = ["11", "12", "13", "4", "5", "1"].includes(est.id_grado.toString());
+
           return (
             <div key={index} className="bg-white rounded-[2rem] shadow-sm border border-gray-100 overflow-hidden mb-4">
               <div onClick={() => setExpandidos((prev) => prev.includes(est.id_alumno) ? prev.filter((i) => i !== est.id_alumno) : [...prev, est.id_alumno])} className="bg-red-50/30 p-6 flex justify-between items-center cursor-pointer transition-colors">
                 <div className="flex items-center space-x-6">
-                  <div className="w-12 h-12 rounded-2xl bg-red-600 text-white flex items-center justify-center font-black text-sm uppercase">
-                    {est.nombre.substring(0, 2)}
-                  </div>
-                  <h4 className="font-black text-gray-800 text-lg uppercase tracking-tight">
-                    {est.nombre}
-                  </h4>
+                  <div className="w-12 h-12 rounded-2xl bg-red-600 text-white flex items-center justify-center font-black text-sm uppercase">{est.nombre.substring(0, 2)}</div>
+                  <h4 className="font-black text-gray-800 text-lg uppercase tracking-tight">{est.nombre}</h4>
                 </div>
                 <span className={`transition-transform duration-300 font-black ${estaAbierto ? "rotate-180" : ""}`}>▼</span>
               </div>
@@ -606,7 +612,20 @@ export default function CalificacionesPage() {
               {grado === "1" && <BoletaPreparatoria alumno={alumnoParaImprimir} unidadActual={unidadAImprimir} seccion={seccion} />}
               {grado === "4" && <BoletaPreKinder alumno={alumnoParaImprimir} unidadActual={unidadAImprimir} seccion={seccion} />}
               {grado === "5" && <BoletaKinder alumno={alumnoParaImprimir} unidadActual={unidadAImprimir} seccion={seccion} />}
-              {["31", "32", "33"].includes(grado) && <BoletaNursery alumno={alumnoParaImprimir} unidadActual={unidadAImprimir} seccion={seccion} />}
+              {["11", "12", "13"].includes(grado) && <BoletaNursery alumno={alumnoParaImprimir} unidadActual={unidadAImprimir} seccion={seccion} />}
+              
+              {/* 💡 BOLETA GENERAL para toda Primaria, Básico y Diversificado */}
+              {[
+                "6", "7", "2", "8", "9", "10", 
+                "14", "15", "16", 
+                "17", "18", "19", "20", "21"
+              ].includes(grado) && (
+                <BoletaGeneral
+                  alumno={alumnoParaImprimir}
+                  unidadActual={unidadAImprimir}
+                  seccion={seccion}
+                />
+              )}
             </>
           )}
         </div>
