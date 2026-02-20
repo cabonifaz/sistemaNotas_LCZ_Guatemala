@@ -2,6 +2,7 @@
 import { ejecutarSP } from '../lib/db';
 import { redirect } from 'next/navigation';
 import { cookies } from 'next/headers'; 
+import crypto from 'crypto'; // 💡 IMPORTACIÓN NATIVA PARA ENCRIPTAR (No requiere instalación)
 
 export async function loginAction(formData: FormData) {
   const username = formData.get('username') as string;
@@ -11,7 +12,12 @@ export async function loginAction(formData: FormData) {
   let hasError = false;
 
   try {
-    const usuarios: any = await ejecutarSP('sp_login_usuario', [username, password]);
+    // 💡 LA MAGIA: Encriptamos la contraseña a SHA-256 para que el texto original no viaje a la BD
+    const hashedPassword = crypto.createHash('sha256').update(password).digest('hex');
+
+    // Enviamos el hash al SP, no la contraseña real
+    const usuarios: any = await ejecutarSP('sp_login_usuario', [username, hashedPassword]);
+    
     if (usuarios && usuarios.length > 0) {
       userLogged = usuarios[0];
     }
@@ -29,7 +35,6 @@ export async function loginAction(formData: FormData) {
       rol: userLogged.rol
     };
 
-    // 💡 APLICADO: await cookies() antes de usar .set()
     const cookieStore = await cookies();
     cookieStore.set('user_session', JSON.stringify(sessionData), {
       httpOnly: true,
@@ -43,6 +48,8 @@ export async function loginAction(formData: FormData) {
     redirect('/?error=credenciales'); 
   }
 }
+
+// ... EL RESTO DE TUS FUNCIONES EN ACTIONS.TS SE QUEDAN EXACTAMENTE IGUAL ...
 
 export async function obtenerPermisosUsuario() {
   // 💡 APLICADO: await cookies() antes de usar .get()
