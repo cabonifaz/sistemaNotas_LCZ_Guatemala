@@ -9,27 +9,36 @@ const BLOQUES_PRIMARIA = {
   5: { titulo: "Responsabilidad del estudiante con su aprendizaje", ids: [130, 131, 132, 133] },
 };
 
-// Diccionario para traducir el ID del grado al texto bonito
+// Diccionario para traducir el ID numérico del grado al texto abreviado para el PDF
 const NOMBRES_GRADOS: Record<string, string> = {
-  "6": "1ro Primaria", "7": "2do Primaria", "2": "3ro Primaria", 
-  "8": "4to Primaria", "9": "5to Primaria", "10": "6to Primaria",
-  "14": "Primero Básico", "15": "Segundo Básico", "16": "Tercero Básico",
-  "17": "Cuarto Bachillerato", "18": "Quinto Bachillerato",
-  "19": "Cuarto Perito", "20": "Quinto Perito", "21": "Sexto Perito"
+  "6": "1ro Primaria", 
+  "7": "2do Primaria", 
+  "2": "3ro Primaria", 
+  "8": "4to Primaria", 
+  "9": "5to Primaria", 
+  "10": "6to Primaria",
+  "14": "1ro Básico", 
+  "15": "2do Básico", 
+  "16": "3ro Básico",
+  "17": "4to Bachillerato", 
+  "18": "5to Bachillerato",
+  "19": "4to Perito", 
+  "20": "5to Perito", 
+  "21": "6to Perito"
 };
 
 export const BoletaGeneral = React.forwardRef(({ alumno, seccion }: any, ref: any) => {
   if (!alumno) return null;
 
-  // 1. Datos Generales Dinámicos
-  const textoGrado = NOMBRES_GRADOS[alumno.id_grado?.toString()] || "Grado no definido";
+  // FORZAMOS A STRING PARA QUE EL DICCIONARIO SIEMPRE LO ENCUENTRE
+  const idGradoString = String(alumno.id_grado);
+  const textoGrado = NOMBRES_GRADOS[idGradoString] || "Grado no definido";
+  
   const textoSeccion = seccion === "1" ? "A" : seccion === "2" ? "B" : seccion === "3" ? "C" : "Única";
   const nombreMaestro = alumno.maestro || "Docente no asignado";
   
-  // 💡 OBTENEMOS EL AÑO ACTUAL AUTOMÁTICAMENTE
   const anioActual = new Date().getFullYear();
 
-  // 2. Funciones de ayuda
   const getMaterias = (bloqueId: number) => alumno.bloques[bloqueId] || [];
 
   const calcularPromedio = (materias: any[], unidad: string) => {
@@ -39,32 +48,42 @@ export const BoletaGeneral = React.forwardRef(({ alumno, seccion }: any, ref: an
     return Math.round(suma / notas.length).toString();
   };
 
-  // 3. Estilos Base para las tablas
   const headerClass = "bg-[#17365D] text-white font-bold text-[10px] py-[2px] px-2 border border-[#17365D] uppercase text-center";
   const cellMateriaClass = "border border-[#17365D] font-bold text-[#17365D] text-[9.5px] py-[1.5px] px-2 text-left w-[44%]";
-  const cellNotaClass = "border border-[#17365D] font-black text-slate-800 text-[10px] py-[1.5px] text-center w-[11%]";
+  
+  // 💡 NUEVA FUNCIÓN: Dibuja la celda y evalúa si la nota debe ir en ROJO
+  const renderNotaCell = (nota: string | number | undefined) => {
+    const num = parseFloat(String(nota));
+    const isReprobado = !isNaN(num) && num < 60;
+    const textColor = isReprobado ? "text-red-600" : "text-slate-800";
+    
+    return (
+      <td className={`border border-[#17365D] font-black ${textColor} text-[10px] py-[1.5px] text-center w-[11%]`}>
+        {nota}
+      </td>
+    );
+  };
 
   return (
     <div ref={ref} className="relative bg-white w-[210mm] h-[297mm] font-sans print:m-0 overflow-hidden">
-      {/* FONDO DE LA BOLETA */}
       <img
         src="/boleta_primaria.jpg"
         className="absolute inset-0 w-full h-full object-fill z-0"
         alt="Fondo Boleta General"
       />
 
-      {/* 💡 AÑO ESCOLAR (Posicionado en el recuadro blanco superior izquierdo) */}
       <div className="absolute top-[40px] left-[70px] w-[100px] text-center text-[50px] font-black text-red-400/80 tracking-widest z-10">
         {anioActual}
       </div>
 
-      {/* DATOS DEL ESTUDIANTE */}
       <div className="absolute top-[200px] left-[250px] text-[12px] font-black text-[#17365D] uppercase tracking-wide z-10">
         {alumno.nombre}
       </div>
+      
       <div className="absolute top-[223px] left-[157px] text-[12px] font-black text-[#17365D] uppercase tracking-wide z-10">
         {textoGrado}
       </div>
+      
       <div className="absolute top-[223px] left-[360px] text-[12px] font-black text-[#17365D] uppercase tracking-wide z-10">
         {textoSeccion}
       </div>
@@ -72,8 +91,6 @@ export const BoletaGeneral = React.forwardRef(({ alumno, seccion }: any, ref: an
         <span className="text-gray-500 font-normal normal-case text-[10px]">Docente Titular:</span> {nombreMaestro}
       </div>
 
-
-      {/* CONTENEDOR DE TABLAS */}
       <div className="absolute top-[245px] left-1/2 -translate-x-1/2 w-[170mm] z-10 flex flex-col gap-[6px]">
         
         {/* BLOQUE 1: Áreas Académicas */}
@@ -92,25 +109,27 @@ export const BoletaGeneral = React.forwardRef(({ alumno, seccion }: any, ref: an
             {getMaterias(1).map((m: any) => (
               <tr key={m.id_materia}>
                 <td className={cellMateriaClass}>{m.materia}</td>
-                <td className={cellNotaClass}>{m.u1}</td>
-                <td className={cellNotaClass}>{m.u2}</td>
-                <td className={cellNotaClass}>{m.u3}</td>
-                <td className={cellNotaClass}>{m.u4}</td>
-                <td className={cellNotaClass}></td> 
+                {/* 💡 USAMOS LA NUEVA FUNCIÓN PARA CADA NOTA */}
+                {renderNotaCell(m.u1)}
+                {renderNotaCell(m.u2)}
+                {renderNotaCell(m.u3)}
+                {renderNotaCell(m.u4)}
+                <td className="border border-[#17365D] font-black text-slate-800 text-[10px] py-[1.5px] text-center w-[11%]"></td> 
               </tr>
             ))}
             {/* FILA DE PROMEDIO */}
             <tr className="bg-[#17365D]/10">
               <td className={`${cellMateriaClass} text-center italic`}>Promedio por unidad</td>
-              <td className={cellNotaClass}>{calcularPromedio(getMaterias(1), "u1")}</td>
-              <td className={cellNotaClass}>{calcularPromedio(getMaterias(1), "u2")}</td>
-              <td className={cellNotaClass}>{calcularPromedio(getMaterias(1), "u3")}</td>
-              <td className={cellNotaClass}>{calcularPromedio(getMaterias(1), "u4")}</td>
-              <td className={cellNotaClass}></td>
+              {renderNotaCell(calcularPromedio(getMaterias(1), "u1"))}
+              {renderNotaCell(calcularPromedio(getMaterias(1), "u2"))}
+              {renderNotaCell(calcularPromedio(getMaterias(1), "u3"))}
+              {renderNotaCell(calcularPromedio(getMaterias(1), "u4"))}
+              <td className="border border-[#17365D] font-black text-slate-800 text-[10px] py-[1.5px] text-center w-[11%]"></td>
             </tr>
           </tbody>
         </table>
 
+        {/* BLOQUE 2: Áreas Extracurriculares */}
         {getMaterias(2).length > 0 && (
           <>
             <div className="text-center font-bold italic text-[12px] text-[#17365D] -mb-1 mt-1">
@@ -130,10 +149,10 @@ export const BoletaGeneral = React.forwardRef(({ alumno, seccion }: any, ref: an
                 {getMaterias(2).map((m: any) => (
                   <tr key={m.id_materia}>
                     <td className={cellMateriaClass}>{m.materia}</td>
-                    <td className={cellNotaClass}>{m.u1}</td>
-                    <td className={cellNotaClass}>{m.u2}</td>
-                    <td className={cellNotaClass}>{m.u3}</td>
-                    <td className={cellNotaClass}>{m.u4}</td>
+                    {renderNotaCell(m.u1)}
+                    {renderNotaCell(m.u2)}
+                    {renderNotaCell(m.u3)}
+                    {renderNotaCell(m.u4)}
                   </tr>
                 ))}
               </tbody>
@@ -141,6 +160,7 @@ export const BoletaGeneral = React.forwardRef(({ alumno, seccion }: any, ref: an
           </>
         )}
 
+        {/* BLOQUE 3: Responsabilidades del estudiante */}
         {getMaterias(3).length > 0 && (
           <>
             <div className="text-center font-bold italic text-[12px] text-[#17365D] -mb-1 mt-1">
@@ -160,10 +180,10 @@ export const BoletaGeneral = React.forwardRef(({ alumno, seccion }: any, ref: an
                 {getMaterias(3).map((m: any) => (
                   <tr key={m.id_materia}>
                     <td className={cellMateriaClass}>{m.materia}</td>
-                    <td className={cellNotaClass}>{m.u1}</td>
-                    <td className={cellNotaClass}>{m.u2}</td>
-                    <td className={cellNotaClass}>{m.u3}</td>
-                    <td className={cellNotaClass}>{m.u4}</td>
+                    {renderNotaCell(m.u1)}
+                    {renderNotaCell(m.u2)}
+                    {renderNotaCell(m.u3)}
+                    {renderNotaCell(m.u4)}
                   </tr>
                 ))}
               </tbody>
@@ -171,6 +191,7 @@ export const BoletaGeneral = React.forwardRef(({ alumno, seccion }: any, ref: an
           </>
         )}
 
+        {/* BLOQUE 4: Hábitos */}
         {getMaterias(4).length > 0 && (
           <table className="w-full border-collapse shadow-sm">
             <thead>
@@ -186,16 +207,17 @@ export const BoletaGeneral = React.forwardRef(({ alumno, seccion }: any, ref: an
               {getMaterias(4).map((m: any) => (
                 <tr key={m.id_materia}>
                   <td className={cellMateriaClass}>{m.materia}</td>
-                  <td className={cellNotaClass}>{m.u1}</td>
-                  <td className={cellNotaClass}>{m.u2}</td>
-                  <td className={cellNotaClass}>{m.u3}</td>
-                  <td className={cellNotaClass}>{m.u4}</td>
+                  {renderNotaCell(m.u1)}
+                  {renderNotaCell(m.u2)}
+                  {renderNotaCell(m.u3)}
+                  {renderNotaCell(m.u4)}
                 </tr>
               ))}
             </tbody>
           </table>
         )}
 
+        {/* BLOQUE 5: Responsabilidad con su aprendizaje */}
         {getMaterias(5).length > 0 && (
           <table className="w-full border-collapse shadow-sm">
             <thead>
@@ -211,10 +233,10 @@ export const BoletaGeneral = React.forwardRef(({ alumno, seccion }: any, ref: an
               {getMaterias(5).map((m: any) => (
                 <tr key={m.id_materia}>
                   <td className={`${cellMateriaClass} leading-tight`}>{m.materia}</td>
-                  <td className={cellNotaClass}>{m.u1}</td>
-                  <td className={cellNotaClass}>{m.u2}</td>
-                  <td className={cellNotaClass}>{m.u3}</td>
-                  <td className={cellNotaClass}>{m.u4}</td>
+                  {renderNotaCell(m.u1)}
+                  {renderNotaCell(m.u2)}
+                  {renderNotaCell(m.u3)}
+                  {renderNotaCell(m.u4)}
                 </tr>
               ))}
             </tbody>

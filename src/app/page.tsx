@@ -2,17 +2,26 @@
 
 import { loginAction } from './actions';
 import { useState, useEffect } from 'react';
-import Link from 'next/link'; // 💡 1. Importamos Link de Next.js
+import Link from 'next/link';
 
 export default function LoginPage() {
   const [usuario, setUsuario] = useState('');
   const [recordarme, setRecordarme] = useState(false);
+  const [errorLogin, setErrorLogin] = useState(''); // 💡 Estado para el error
 
   useEffect(() => {
     const usuarioGuardado = localStorage.getItem('usuarioLiceoRecordado');
     if (usuarioGuardado) {
       setUsuario(usuarioGuardado);
       setRecordarme(true);
+    }
+
+    // 💡 Detectamos si hay error en la URL al cargar la página
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('error') === 'credenciales') {
+      setErrorLogin('⚠️ Usuario o contraseña incorrectos. Verifica tus datos.');
+    } else if (params.get('error') === 'servidor') {
+      setErrorLogin('⚠️ Error de conexión con el servidor. Intenta de nuevo.');
     }
   }, []);
 
@@ -39,6 +48,13 @@ export default function LoginPage() {
             Portal Docente y Administrativo
           </p>
         </div>
+
+        {/* 💡 ALERTA DE ERROR VISUAL */}
+        {errorLogin && (
+          <div className="mb-6 bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-xl text-xs font-black text-center animate-pulse">
+            {errorLogin}
+          </div>
+        )}
         
         <form action={handleSubmit} className="space-y-6">
           <div>
@@ -69,10 +85,7 @@ export default function LoginPage() {
             />
           </div>
 
-          {/* 💡 6. CONTENEDOR FLEX PARA RECORDARME Y OLVIDÉ CONTRASEÑA */}
           <div className="flex items-center justify-between mt-2 px-1">
-            
-            {/* El chequecito de recordar */}
             <div className="flex items-center">
               <input
                 id="recordarme"
@@ -85,15 +98,12 @@ export default function LoginPage() {
                 Recordar usuario
               </label>
             </div>
-
-            {/* 💡 EL NUEVO BOTÓN DE OLVIDÉ MI CONTRASEÑA */}
             <Link 
               href="/recuperar" 
               className="text-[10px] font-black tracking-wider text-red-600 uppercase hover:text-red-800 transition-colors"
             >
               ¿Olvidaste tu clave?
             </Link>
-
           </div>
 
           <button 
