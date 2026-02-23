@@ -9,7 +9,7 @@ export default function NotasLayout({ children }: { children: React.ReactNode })
   const isActivo = (ruta: string) => pathname === ruta;
   
   const [usuario, setUsuario] = useState<any>(null);
-  const [menuAbierto, setMenuAbierto] = useState(false); // 💡 Estado para celular
+  const [menuAbierto, setMenuAbierto] = useState(false); // Estado para celular
 
   useEffect(() => {
     const cargarUsuario = async () => {
@@ -27,7 +27,6 @@ export default function NotasLayout({ children }: { children: React.ReactNode })
         <div className="flex items-center gap-3">
           <img src="/logo.png" alt="Logo" className="w-8 h-8 object-contain" />
           <div>
-            {/* 💡 Título dinámico: ADMIN o PROFESOR */}
             <h2 className="text-sm font-black text-gray-800 leading-none tracking-tighter uppercase">
               {usuario?.rol === 'Admin' ? 'Administrador' : 'Profesor'}
             </h2>
@@ -45,7 +44,6 @@ export default function NotasLayout({ children }: { children: React.ReactNode })
       {/* 🔴 MENÚ LATERAL (Adaptable: Panel deslizante en móvil, fijo en PC) */}
       <aside className={`w-64 bg-white border-r border-gray-100 shadow-[4px_0_24px_rgba(0,0,0,0.02)] z-40 fixed md:sticky top-0 h-screen transition-transform transform ${menuAbierto ? 'translate-x-0' : '-translate-x-full'} md:translate-x-0 flex flex-col`}>
         <div className="p-8 pb-6 text-center border-b border-gray-50 hidden md:block">
-          {/* 💡 Título dinámico en PC */}
           <h2 className="text-xl font-black text-gray-800 leading-none tracking-tighter uppercase">
             {usuario?.rol === 'Admin' ? 'Admin' : 'Profesor'}
           </h2>
@@ -61,11 +59,20 @@ export default function NotasLayout({ children }: { children: React.ReactNode })
               <span>Dashboard</span>
             </Link>
 
+            {/* 💡 SECCIONES EXCLUSIVAS DE ADMINISTRADOR */}
             {usuario?.rol === 'Admin' && (
-              <Link onClick={() => setMenuAbierto(false)} href="/notas/estudiantes" className={`flex items-center space-x-3 px-4 py-3 rounded-xl font-bold transition-all text-sm ${isActivo('/notas/estudiantes') ? 'bg-[#E60000] text-white shadow-lg shadow-red-200' : 'text-gray-500 hover:bg-red-50 hover:text-red-600'}`}>
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M12 14l9-5-9-5-9 5 9 5z" /><path d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 14l9-5-9-5-9 5 9 5zm0 0l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14zm-4 6v-7.5l4-2.222" /></svg>
-                <span>Estudiantes</span>
-              </Link>
+              <>
+                <Link onClick={() => setMenuAbierto(false)} href="/notas/estudiantes" className={`flex items-center space-x-3 px-4 py-3 rounded-xl font-bold transition-all text-sm ${isActivo('/notas/estudiantes') ? 'bg-[#E60000] text-white shadow-lg shadow-red-200' : 'text-gray-500 hover:bg-red-50 hover:text-red-600'}`}>
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M12 14l9-5-9-5-9 5 9 5z" /><path d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 14l9-5-9-5-9 5 9 5zm0 0l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14zm-4 6v-7.5l4-2.222" /></svg>
+                  <span>Estudiantes</span>
+                </Link>
+
+                {/* 💡 NUEVO ENLACE: GESTIÓN DE DOCENTES */}
+                <Link onClick={() => setMenuAbierto(false)} href="/notas/docentes" className={`flex items-center space-x-3 px-4 py-3 rounded-xl font-bold transition-all text-sm ${isActivo('/notas/docentes') ? 'bg-[#E60000] text-white shadow-lg shadow-red-200' : 'text-gray-500 hover:bg-red-50 hover:text-red-600'}`}>
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" /></svg>
+                  <span>Usuarios</span>
+                </Link>
+              </>
             )}
 
             <Link onClick={() => setMenuAbierto(false)} href="/notas/calificaciones" className={`flex items-center space-x-3 px-4 py-3 rounded-xl font-bold transition-all text-sm ${isActivo('/notas/calificaciones') ? 'bg-[#E60000] text-white shadow-lg shadow-red-200' : 'text-gray-500 hover:bg-red-50 hover:text-red-600'}`}>

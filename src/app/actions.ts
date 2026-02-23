@@ -171,3 +171,81 @@ export async function obtenerMaestroTitular(grado: number, seccion: number) {
     return "Docente no asignado";
   }
 }
+
+// ==========================================
+// NUEVAS FUNCIONES PARA GESTIÓN DE DOCENTES
+// ==========================================
+
+export async function obtenerDocentes() {
+  try {
+    const datos: any = await ejecutarSP('sp_docentes_lst', []);
+    return datos || [];
+  } catch (error) {
+    return [];
+  }
+}
+
+export async function crearNuevoDocente(nombre: string, correo: string, pass: string, rol: string) {
+  try {
+    const hashedPassword = crypto.createHash('sha256').update(pass).digest('hex');
+    // 💡 AHORA ENVIAMOS EL ROL AL PROCEDIMIENTO ALMACENADO
+    await ejecutarSP('sp_docentes_ins', [nombre, correo, hashedPassword, rol]);
+    return { success: true };
+  } catch (error) {
+    return { success: false };
+  }
+}
+
+export async function obtenerAsignacionesDocente(id_usuario: number) {
+  try {
+    const datos: any = await ejecutarSP('sp_asignaciones_docente_lst', [id_usuario]);
+    return datos || [];
+  } catch (error) {
+    return [];
+  }
+}
+
+export async function agregarAsignacion(id_usuario: number, id_grado: number, seccion: number, id_materia: number) {
+  try {
+    await ejecutarSP('sp_asignaciones_ins', [id_usuario, id_grado, seccion, id_materia]);
+    return { success: true };
+  } catch (error) {
+    return { success: false };
+  }
+}
+
+export async function eliminarAsignacion(id_asignacion: number) {
+  try {
+    await ejecutarSP('sp_asignaciones_del', [id_asignacion]);
+    return { success: true };
+  } catch (error) {
+    return { success: false };
+  }
+}
+
+export async function obtenerGradosList() {
+  try {
+    const datos: any = await ejecutarSP('sp_grados_lst', []);
+    return datos || [];
+  } catch (error) {
+    return [];
+  }
+}
+
+export async function obtenerMateriasList() {
+  try {
+    const datos: any = await ejecutarSP('sp_materias_lst', []);
+    return datos || [];
+  } catch (error) {
+    return [];
+  }
+}
+
+export async function eliminarDocente(id_usuario: number) {
+  try {
+    await ejecutarSP('sp_docentes_del', [id_usuario]);
+    return { success: true };
+  } catch (error) {
+    return { success: false };
+  }
+}
