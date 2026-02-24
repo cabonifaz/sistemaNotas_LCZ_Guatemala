@@ -54,7 +54,7 @@ export const BoletaGeneral = React.forwardRef(({ alumno, seccion }: any, ref: an
   // 💡 NUEVA FUNCIÓN: Dibuja la celda y evalúa si la nota debe ir en ROJO
   const renderNotaCell = (nota: string | number | undefined) => {
     const num = parseFloat(String(nota));
-    const isReprobado = !isNaN(num) && num < 60;
+    const isReprobado = !isNaN(num) && num < 69;
     const textColor = isReprobado ? "text-red-600" : "text-slate-800";
     
     return (

@@ -162,7 +162,7 @@ export default function DashboardPage() {
                 href="/notas/docentes"
                 className="px-10 py-4 bg-[#B30000] hover:bg-red-900 text-white border border-red-500/30 text-xs font-black rounded-2xl shadow-lg transition-all hover:scale-105 active:scale-95 text-center flex items-center justify-center"
               >
-                GESTIÓN DOCENTE
+                GESTIÓN DE USUARIOS
               </Link>
             </>
           )}
