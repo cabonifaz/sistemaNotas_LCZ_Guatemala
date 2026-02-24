@@ -1,12 +1,25 @@
 import React from "react";
 
-// Mapeo de los bloques según tu base de datos
-const BLOQUES_PRIMARIA = {
-  1: { titulo: "Áreas Académicas", ids: [104, 105, 106, 107, 108, 109, 110, 111, 112, 113, 114, 115] },
-  2: { titulo: "Áreas Extracurriculares", ids: [116, 117] },
-  3: { titulo: "Responsabilidades del estudiante con su comportamiento", ids: [118, 119, 120, 121, 122] },
-  4: { titulo: "Hábitos Practicados en casa", ids: [123, 124, 125, 126, 127, 128, 129] },
-  5: { titulo: "Responsabilidad del estudiante con su aprendizaje", ids: [130, 131, 132, 133] },
+// 💡 DICCIONARIOS CON TIPADO ESTRICTO PARA EVITAR ERRORES DE TYPESCRIPT
+const TITULOS_PRIMARIA: Record<number, string> = {
+  1: "Áreas Académicas",
+  2: "Programas Educativos Extracurriculares",
+  3: "Responsabilidades del estudiante con su comportamiento",
+  4: "Hábitos Practicados en casa",
+  5: "Responsabilidad del estudiante con su aprendizaje",
+};
+
+const TITULOS_MEDIO: Record<number, string> = {
+  1: "Áreas y Sub áreas",
+  2: "Áreas Educativas Extracurriculares",
+  3: "Responsabilidad del Estudiante",
+};
+
+const TITULOS_PERITO: Record<number, string> = {
+  1: "Áreas Académicas",
+  2: "Áreas Académicas Extracurriculares",
+  3: "Áreas Extracurriculares",
+  4: "Responsabilidad del Estudiante",
 };
 
 // Diccionario para traducir el ID numérico del grado al texto abreviado para el PDF
@@ -30,19 +43,34 @@ const NOMBRES_GRADOS: Record<string, string> = {
 export const BoletaGeneral = React.forwardRef(({ alumno, seccion }: any, ref: any) => {
   if (!alumno) return null;
 
-  // FORZAMOS A STRING PARA QUE EL DICCIONARIO SIEMPRE LO ENCUENTRE
   const idGradoString = String(alumno.id_grado);
   const textoGrado = NOMBRES_GRADOS[idGradoString] || "Grado no definido";
-  
   const textoSeccion = seccion === "1" ? "A" : seccion === "2" ? "B" : seccion === "3" ? "C" : "Única";
   const nombreMaestro = alumno.maestro || "Docente no asignado";
-  
   const anioActual = new Date().getFullYear();
+
+  // 💡 Banderas lógicas para saber qué formato de boleta dibujar
+  const esBasicoOBachillerato = ["14", "15", "16", "17", "18"].includes(idGradoString);
+  const esPerito = ["19", "20", "21"].includes(idGradoString);
 
   const getMaterias = (bloqueId: number) => alumno.bloques[bloqueId] || [];
 
-  const calcularPromedio = (materias: any[], unidad: string) => {
-    const notas = materias.map((m) => parseFloat(m[unidad])).filter((n) => !isNaN(n));
+  // Función para calcular promedio de un solo bloque (Primaria, Básico, Bachillerato)
+  const calcularPromedioBloque = (materias: any[], unidad: string) => {
+    const notas = materias.map((m: any) => parseFloat(m[unidad])).filter((n: number) => !isNaN(n));
+    if (notas.length === 0) return "";
+    const suma = notas.reduce((a: number, b: number) => a + b, 0);
+    return Math.round(suma / notas.length).toString();
+  };
+
+  // 💡 NUEVA FUNCIÓN: Promedio combinado (Especial para Perito)
+  // Une las materias del Bloque 1 y Bloque 2 y saca un promedio general de ambos
+  const calcularPromedioPerito = (unidad: string) => {
+    const matB1 = getMaterias(1);
+    const matB2 = getMaterias(2);
+    const materiasCombinadas = [...matB1, ...matB2];
+    
+    const notas = materiasCombinadas.map((m) => parseFloat(m[unidad])).filter((n) => !isNaN(n));
     if (notas.length === 0) return "";
     const suma = notas.reduce((a, b) => a + b, 0);
     return Math.round(suma / notas.length).toString();
@@ -51,7 +79,7 @@ export const BoletaGeneral = React.forwardRef(({ alumno, seccion }: any, ref: an
   const headerClass = "bg-[#17365D] text-white font-bold text-[10px] py-[2px] px-2 border border-[#17365D] uppercase text-center";
   const cellMateriaClass = "border border-[#17365D] font-bold text-[#17365D] text-[9.5px] py-[1.5px] px-2 text-left w-[44%]";
   
-  // 💡 NUEVA FUNCIÓN: Dibuja la celda y evalúa si la nota debe ir en ROJO
+  // Dibuja la celda y evalúa si la nota debe ir en ROJO
   const renderNotaCell = (nota: string | number | undefined) => {
     const num = parseFloat(String(nota));
     const isReprobado = !isNaN(num) && num < 69;
@@ -62,6 +90,13 @@ export const BoletaGeneral = React.forwardRef(({ alumno, seccion }: any, ref: an
         {nota}
       </td>
     );
+  };
+
+  // 💡 SOLUCIÓN A TYPESCRIPT: Retorna el título dinámicamente sin quejarse
+  const getTituloBloque = (bloqueId: number) => {
+    if (esPerito) return TITULOS_PERITO[bloqueId] || "";
+    if (esBasicoOBachillerato) return TITULOS_MEDIO[bloqueId] || "";
+    return TITULOS_PRIMARIA[bloqueId] || "";
   };
 
   return (
@@ -93,56 +128,67 @@ export const BoletaGeneral = React.forwardRef(({ alumno, seccion }: any, ref: an
 
       <div className="absolute top-[245px] left-1/2 -translate-x-1/2 w-[170mm] z-10 flex flex-col gap-[6px]">
         
-        {/* BLOQUE 1: Áreas Académicas */}
-        <table className="w-full border-collapse shadow-sm">
-          <thead>
-            <tr>
-              <th className={headerClass}>{BLOQUES_PRIMARIA[1].titulo}</th>
-              <th className={headerClass}>I UNIDAD</th>
-              <th className={headerClass}>II UNIDAD</th>
-              <th className={headerClass}>III UNIDAD</th>
-              <th className={headerClass}>IV UNIDAD</th>
-              <th className={`${headerClass} leading-tight`}>NOTAS<br/>FINALES</th>
-            </tr>
-          </thead>
-          <tbody>
-            {getMaterias(1).map((m: any) => (
-              <tr key={m.id_materia}>
-                <td className={cellMateriaClass}>{m.materia}</td>
-                {/* 💡 USAMOS LA NUEVA FUNCIÓN PARA CADA NOTA */}
-                {renderNotaCell(m.u1)}
-                {renderNotaCell(m.u2)}
-                {renderNotaCell(m.u3)}
-                {renderNotaCell(m.u4)}
-                <td className="border border-[#17365D] font-black text-slate-800 text-[10px] py-[1.5px] text-center w-[11%]"></td> 
+        {/* ======================================= */}
+        {/* BLOQUE 1: Áreas Académicas              */}
+        {/* ======================================= */}
+        {getMaterias(1).length > 0 && (
+          <table className="w-full border-collapse shadow-sm">
+            <thead>
+              <tr>
+                <th className={headerClass}>{getTituloBloque(1)}</th>
+                <th className={headerClass}>I UNIDAD</th>
+                <th className={headerClass}>II UNIDAD</th>
+                <th className={headerClass}>III UNIDAD</th>
+                <th className={headerClass}>IV UNIDAD</th>
+                <th className={`${headerClass} leading-tight`}>NOTAS<br/>FINALES</th>
               </tr>
-            ))}
-            {/* FILA DE PROMEDIO */}
-            <tr className="bg-[#17365D]/10">
-              <td className={`${cellMateriaClass} text-center italic`}>Promedio por unidad</td>
-              {renderNotaCell(calcularPromedio(getMaterias(1), "u1"))}
-              {renderNotaCell(calcularPromedio(getMaterias(1), "u2"))}
-              {renderNotaCell(calcularPromedio(getMaterias(1), "u3"))}
-              {renderNotaCell(calcularPromedio(getMaterias(1), "u4"))}
-              <td className="border border-[#17365D] font-black text-slate-800 text-[10px] py-[1.5px] text-center w-[11%]"></td>
-            </tr>
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {getMaterias(1).map((m: any) => (
+                <tr key={m.id_materia}>
+                  <td className={cellMateriaClass}>{m.materia}</td>
+                  {renderNotaCell(m.u1)}
+                  {renderNotaCell(m.u2)}
+                  {renderNotaCell(m.u3)}
+                  {renderNotaCell(m.u4)}
+                  <td className="border border-[#17365D] font-black text-slate-800 text-[10px] py-[1.5px] text-center w-[11%]"></td> 
+                </tr>
+              ))}
+              
+              {/* 💡 EL PROMEDIO DEL BLOQUE 1 SOLO SE DIBUJA SI NO ES PERITO */}
+              {!esPerito && (
+                <tr className="bg-[#17365D]/10">
+                  <td className={`${cellMateriaClass} text-center italic`}>Promedio Exacto</td>
+                  {renderNotaCell(calcularPromedioBloque(getMaterias(1), "u1"))}
+                  {renderNotaCell(calcularPromedioBloque(getMaterias(1), "u2"))}
+                  {renderNotaCell(calcularPromedioBloque(getMaterias(1), "u3"))}
+                  {renderNotaCell(calcularPromedioBloque(getMaterias(1), "u4"))}
+                  <td className="border border-[#17365D]"></td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        )}
 
-        {/* BLOQUE 2: Áreas Extracurriculares */}
+        {/* ======================================= */}
+        {/* BLOQUE 2: Áreas Extracurriculares (Primaria/Medio) o Áreas Académicas 2 (Perito) */}
+        {/* ======================================= */}
         {getMaterias(2).length > 0 && (
           <>
-            <div className="text-center font-bold italic text-[12px] text-[#17365D] -mb-1 mt-1">
-              Programas Educativos Extracurriculares:
-            </div>
+            {!esPerito && (
+              <div className="text-center font-bold italic text-[12px] text-[#17365D] -mb-1 mt-1">
+                {esBasicoOBachillerato ? "Resultado: Destaca, Avanza, Necesita Mejorar" : "Programas Educativos Extracurriculares:"}
+              </div>
+            )}
             <table className="w-full border-collapse shadow-sm">
               <thead>
                 <tr>
-                  <th className={headerClass}>{BLOQUES_PRIMARIA[2].titulo}</th>
+                  <th className={headerClass}>{getTituloBloque(2)}</th>
                   <th className={headerClass}>I UNIDAD</th>
                   <th className={headerClass}>II UNIDAD</th>
                   <th className={headerClass}>III UNIDAD</th>
                   <th className={headerClass}>IV UNIDAD</th>
+                  {esPerito && <th className={`${headerClass} leading-tight`}>NOTAS<br/>FINALES</th>}
                 </tr>
               </thead>
               <tbody>
@@ -153,14 +199,29 @@ export const BoletaGeneral = React.forwardRef(({ alumno, seccion }: any, ref: an
                     {renderNotaCell(m.u2)}
                     {renderNotaCell(m.u3)}
                     {renderNotaCell(m.u4)}
+                    {esPerito && <td className="border border-[#17365D] font-black text-slate-800 text-[10px] py-[1.5px] text-center w-[11%]"></td>}
                   </tr>
                 ))}
+
+                {/* 💡 SI ES PERITO, DIBUJAMOS EL PROMEDIO GENERAL DEL BLOQUE 1 Y 2 AQUÍ */}
+                {esPerito && (
+                  <tr className="bg-[#17365D]/10">
+                    <td className={`${cellMateriaClass} text-center italic`}>Promedio Exacto (General)</td>
+                    {renderNotaCell(calcularPromedioPerito("u1"))}
+                    {renderNotaCell(calcularPromedioPerito("u2"))}
+                    {renderNotaCell(calcularPromedioPerito("u3"))}
+                    {renderNotaCell(calcularPromedioPerito("u4"))}
+                    <td className="border border-[#17365D]"></td>
+                  </tr>
+                )}
               </tbody>
             </table>
           </>
         )}
 
-        {/* BLOQUE 3: Responsabilidades del estudiante */}
+        {/* ======================================= */}
+        {/* BLOQUE 3: Comportamiento (Primaria/Medio) o Extracurricular (Perito) */}
+        {/* ======================================= */}
         {getMaterias(3).length > 0 && (
           <>
             <div className="text-center font-bold italic text-[12px] text-[#17365D] -mb-1 mt-1">
@@ -169,7 +230,7 @@ export const BoletaGeneral = React.forwardRef(({ alumno, seccion }: any, ref: an
             <table className="w-full border-collapse shadow-sm">
               <thead>
                 <tr>
-                  <th className={`${headerClass} leading-tight py-1`}>{BLOQUES_PRIMARIA[3].titulo}</th>
+                  <th className={`${headerClass} leading-tight py-1`}>{getTituloBloque(3)}</th>
                   <th className={headerClass}>I UNIDAD</th>
                   <th className={headerClass}>II UNIDAD</th>
                   <th className={headerClass}>III UNIDAD</th>
@@ -191,12 +252,14 @@ export const BoletaGeneral = React.forwardRef(({ alumno, seccion }: any, ref: an
           </>
         )}
 
-        {/* BLOQUE 4: Hábitos */}
+        {/* ======================================= */}
+        {/* BLOQUE 4: Hábitos (Primaria) o Comportamiento (Perito) */}
+        {/* ======================================= */}
         {getMaterias(4).length > 0 && (
-          <table className="w-full border-collapse shadow-sm">
+          <table className="w-full border-collapse shadow-sm mt-1">
             <thead>
               <tr>
-                <th className={headerClass}>{BLOQUES_PRIMARIA[4].titulo}</th>
+                <th className={headerClass}>{getTituloBloque(4)}</th>
                 <th className={headerClass}>I UNIDAD</th>
                 <th className={headerClass}>II UNIDAD</th>
                 <th className={headerClass}>III UNIDAD</th>
@@ -217,12 +280,14 @@ export const BoletaGeneral = React.forwardRef(({ alumno, seccion }: any, ref: an
           </table>
         )}
 
-        {/* BLOQUE 5: Responsabilidad con su aprendizaje */}
+        {/* ======================================= */}
+        {/* BLOQUE 5: Responsabilidad con su aprendizaje (Solo Primaria) */}
+        {/* ======================================= */}
         {getMaterias(5).length > 0 && (
-          <table className="w-full border-collapse shadow-sm">
+          <table className="w-full border-collapse shadow-sm mt-1">
             <thead>
               <tr>
-                <th className={`${headerClass} leading-tight py-1`}>{BLOQUES_PRIMARIA[5].titulo}</th>
+                <th className={`${headerClass} leading-tight py-1`}>{getTituloBloque(5)}</th>
                 <th className={headerClass}>I UNIDAD</th>
                 <th className={headerClass}>II UNIDAD</th>
                 <th className={headerClass}>III UNIDAD</th>
