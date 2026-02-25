@@ -13,6 +13,7 @@ import {
   guardarCalificacionesMasivas,
   obtenerPermisosUsuario,
   obtenerMaestroTitular,
+  obtenerConfiguracionActiva
 } from "../../actions";
 
 const INTERVALO_AUTOSAVE_MS = 2 * 60 * 1000;
@@ -25,6 +26,7 @@ export default function CalificacionesPage() {
   const [expandidos, setExpandidos] = useState<number[]>([]);
   const [permisos, setPermisos] = useState<any>(null);
 
+  const [anioEscolar, setAnioEscolar] = useState<number>(new Date().getFullYear());
   const [unidadesHabilitadas, setUnidadesHabilitadas] = useState<number[]>([1]);
 
   const [alumnosGuardando, setAlumnosGuardando] = useState<number[]>([]);
@@ -41,7 +43,7 @@ export default function CalificacionesPage() {
 
   const handlePrint = useReactToPrint({
     contentRef: componentRef,
-    documentTitle: `Boletas_${grado}_Seccion${seccion}`,
+    documentTitle: `Boletas_${grado}_Seccion${seccion}_${anioEscolar}`,
   });
 
   const handleImpresionMasiva = (unidad: number) => {
@@ -102,11 +104,15 @@ export default function CalificacionesPage() {
   );
 
   useEffect(() => {
-    async function cargarPermisos() {
+    async function cargarInicial() {
       const p = await obtenerPermisosUsuario();
       setPermisos(p);
+      
+      const config = await obtenerConfiguracionActiva();
+      setAnioEscolar(config.anio); 
+      setUnidadesHabilitadas(config.activas);
     }
-    cargarPermisos();
+    cargarInicial();
   }, []);
 
   const curricularesNurseryBase = [
@@ -114,7 +120,7 @@ export default function CalificacionesPage() {
     { id_materia: 7, materia: "Destrezas de Aprendizaje", tipo: "Texto_Prepa", u1: "", u2: "", u3: "", u4: "" },
     { id_materia: 8, materia: "Conocimiento de su mundo", tipo: "Texto_Prepa", u1: "", u2: "", u3: "", u4: "" },
     { id_materia: 9, materia: "Educación Cristiana", tipo: "Texto_Prepa", u1: "", u2: "", u3: "", u4: "" },
-    { id_materia: 10, materia: "Expresión Artística", tipo: "Texto_Prepa", u1: "", u2: "", u3: "", u4: "" },
+    { id_materia: 10, materia: "Música", tipo: "Texto_Prepa", u1: "", u2: "", u3: "", u4: "" },
     { id_materia: 11, materia: "Idioma Inglés", tipo: "Texto_Prepa", u1: "", u2: "", u3: "", u4: "" },
     { id_materia: 12, materia: "Motricidad", tipo: "Texto_Prepa", u1: "", u2: "", u3: "", u4: "" },
   ];
@@ -196,7 +202,7 @@ export default function CalificacionesPage() {
       { id_materia: 106, materia: "Matemáticas", tipo: "Numerica", u1: "", u2: "", u3: "", u4: "" },
       { id_materia: 107, materia: "Medio Social", tipo: "Numerica", u1: "", u2: "", u3: "", u4: "" },
       { id_materia: 108, materia: "Medio Natural", tipo: "Numerica", u1: "", u2: "", u3: "", u4: "" },
-      { id_materia: 109, materia: "Expresión Artística", tipo: "Numerica", u1: "", u2: "", u3: "", u4: "" },
+      { id_materia: 109, materia: "Música", tipo: "Numerica", u1: "", u2: "", u3: "", u4: "" },
       { id_materia: 110, materia: "Educación Física", tipo: "Numerica", u1: "", u2: "", u3: "", u4: "" },
       { id_materia: 111, materia: "Formación Ciudadana", tipo: "Numerica", u1: "", u2: "", u3: "", u4: "" },
       { id_materia: 112, materia: "Ortografía", tipo: "Numerica", u1: "", u2: "", u3: "", u4: "" },
@@ -298,7 +304,7 @@ export default function CalificacionesPage() {
       { id_materia: 219, materia: "Biología", tipo: "Numerica", u1: "", u2: "", u3: "", u4: "" },
       { id_materia: 217, materia: "Química", tipo: "Numerica", u1: "", u2: "", u3: "", u4: "" },
       { id_materia: 273, materia: "Ciencias Sociales y Formación Ciudadana 5", tipo: "Numerica", u1: "", u2: "", u3: "", u4: "" },
-      { id_materia: 229, materia: "Expresión Artística", tipo: "Numerica", u1: "", u2: "", u3: "", u4: "" },
+      { id_materia: 229, materia: "Música", tipo: "Numerica", u1: "", u2: "", u3: "", u4: "" },
       { id_materia: 207, materia: "Seminario", tipo: "Numerica", u1: "", u2: "", u3: "", u4: "" },
       { id_materia: 242, materia: "Razonamiento Matemático", tipo: "Numerica", u1: "", u2: "", u3: "", u4: "" },
     ],
@@ -361,12 +367,13 @@ export default function CalificacionesPage() {
     ],
   };
 
+  // 💡 SE INVIRTIÓ EL ORDEN: Primero el ID 5 (Aprendizaje) y luego el ID 4 (Hábitos en casa)
   const areasPrimaria = [
     { id: 1, titulo: "1. Áreas Académicas" },
     { id: 2, titulo: "2. Programas Educativos Extracurriculares" },
     { id: 3, titulo: "3. Responsabilidades del estudiante con su comportamiento" },
-    { id: 4, titulo: "4. Hábitos Practicados en casa" },
-    { id: 5, titulo: "5. Responsabilidad del estudiante con su aprendizaje" },
+    { id: 5, titulo: "4. Responsabilidad del estudiante con su aprendizaje" },
+    { id: 4, titulo: "5. Hábitos Practicados en casa" },
   ];
 
   const areasBasico = [
@@ -403,6 +410,16 @@ export default function CalificacionesPage() {
   const puedeEditarMateria = (idM: number) => {
     if (!permisos) return false;
     if (permisos.rol === "Admin" || permisos.rol === "Super usuario" || permisos.asignaciones === "ALL") return true;
+
+    const esPrePrimariaOPrimaria = ["11", "12", "13", "4", "5", "1", "6", "7", "2", "8", "9", "10"].includes(grado);
+    
+    if (esPrePrimariaOPrimaria) {
+      const asignadoASeccion = permisos.asignaciones.some(
+        (a: any) => a.id_grado.toString() === grado && a.seccion.toString() === seccion
+      );
+      if (asignadoASeccion) return true;
+    }
+
     return permisos.asignaciones.some((a: any) => a.id_grado.toString() === grado && a.seccion.toString() === seccion && a.id_materia === idM);
   };
 
@@ -415,7 +432,6 @@ export default function CalificacionesPage() {
     return Math.round(suma / numericas.length);
   };
 
-  // 💡 NUEVA FUNCIÓN PARA LA WEB: Promedio combinado de 2 bloques (Para Perito)
   const calcularPromedioCombinado = (bloque1: any[], bloque2: any[], unidad: string) => {
     const numericas1 = bloque1.filter((m) => m.tipo === "Numerica");
     const numericas2 = bloque2.filter((m) => m.tipo === "Numerica");
@@ -561,7 +577,6 @@ export default function CalificacionesPage() {
       const esPerito = ["19", "20", "21"].includes(estudiante.id_grado.toString());
       let promedios = { u1: 0, u2: 0, u3: 0, u4: 0 };
 
-      // 💡 GUARDADO INTELIGENTE: Si es Perito, combina los 2 bloques. Si no, solo el bloque 1.
       if (esPerito) {
         promedios = {
           u1: Number(calcularPromedioCombinado(estudiante.bloques[1] || [], estudiante.bloques[2] || [], "u1")),
@@ -660,12 +675,12 @@ export default function CalificacionesPage() {
   };
 
   const renderBoletaEspecifica = (estudiante: any, unidad: number) => {
-    if (grado === "1") return <BoletaPreparatoria alumno={estudiante} unidadActual={unidad} seccion={seccion} />;
-    if (grado === "4") return <BoletaPreKinder alumno={estudiante} unidadActual={unidad} seccion={seccion} />;
-    if (grado === "5") return <BoletaKinder alumno={estudiante} unidadActual={unidad} seccion={seccion} />;
-    if (["11", "12", "13"].includes(grado)) return <BoletaNursery alumno={estudiante} unidadActual={unidad} seccion={seccion} />;
+    if (grado === "1") return <BoletaPreparatoria alumno={estudiante} unidadActual={unidad} seccion={seccion} anio={anioEscolar} />;
+    if (grado === "4") return <BoletaPreKinder alumno={estudiante} unidadActual={unidad} seccion={seccion} anio={anioEscolar} />;
+    if (grado === "5") return <BoletaKinder alumno={estudiante} unidadActual={unidad} seccion={seccion} anio={anioEscolar} />;
+    if (["11", "12", "13"].includes(grado)) return <BoletaNursery alumno={estudiante} unidadActual={unidad} seccion={seccion} anio={anioEscolar} />;
     if (["6", "7", "2", "8", "9", "10", "14", "15", "16", "17", "18", "19", "20", "21"].includes(grado)) {
-      return <BoletaGeneral alumno={estudiante} unidadActual={unidad} seccion={seccion} />;
+      return <BoletaGeneral alumno={estudiante} unidadActual={unidad} seccion={seccion} anio={anioEscolar} />;
     }
     return null;
   };
@@ -675,16 +690,6 @@ export default function CalificacionesPage() {
       <header className="bg-[#E60000] text-white shadow-lg p-4 md:p-6 flex flex-col md:flex-row justify-between items-center sticky top-0 z-50 gap-4">
         <h1 className="text-lg md:text-xl font-black uppercase tracking-tight leading-none">Liceo Cristiano Zacapaneco</h1>
         <div className="flex flex-col md:flex-row items-center gap-6">
-          {(permisos?.rol === "Admin" || permisos?.rol === "Super usuario") && (
-            <div className="flex items-center gap-3 bg-white/10 px-4 py-2 rounded-xl backdrop-blur-sm">
-              <span className="text-[9px] font-black uppercase tracking-widest text-white/90">Permitir Edición y PDF en:</span>
-              {[1, 2, 3, 4].map(num => (
-                <button key={num} onClick={() => toggleUnidad(num)} className={`w-8 h-8 rounded-lg font-black text-xs transition-all ${unidadesHabilitadas.includes(num) ? 'bg-white text-[#E60000] shadow-md scale-110' : 'bg-red-900 text-red-300 hover:bg-red-950'}`} title={unidadesHabilitadas.includes(num) ? `Bloquear Unidad ${num}` : `Habilitar Unidad ${num}`}>
-                  U{num}
-                </button>
-              ))}
-            </div>
-          )}
           <Link href="/notas" className="px-6 py-3 bg-white text-[#E60000] rounded-xl font-black text-xs uppercase shadow-md hover:bg-gray-100 transition-colors">Menú</Link>
         </div>
       </header>
@@ -835,8 +840,6 @@ export default function CalificacionesPage() {
                                 <tr><td colSpan={5} className="px-4 md:px-10 py-4 font-black text-gray-700 uppercase text-[10px] bg-gray-50/50 text-left tracking-widest border-t-4 border-white">{area.titulo}</td></tr>
                                 {est.bloques[area.id].map((m: any) => renderFilaMateria(m, est.id_alumno))}
                                 
-                                {/* 💡 LÓGICA INTELIGENTE DE PROMEDIOS */}
-                                {/* Si no es perito, imprime el promedio en el bloque 1 */}
                                 {(!esPerito && area.id === 1) && (
                                   <tr className="bg-red-50/50 font-black text-[#E60000] border-t-2 border-red-100">
                                     <td className="px-4 md:px-10 py-4 text-right text-[10px] uppercase tracking-widest">Promedio Exacto</td>
@@ -847,7 +850,6 @@ export default function CalificacionesPage() {
                                   </tr>
                                 )}
 
-                                {/* Si ES perito, se salta el del bloque 1 e imprime el Promedio Combinado en el bloque 2 */}
                                 {(esPerito && area.id === 2) && (
                                   <tr className="bg-red-50/50 font-black text-[#E60000] border-t-2 border-red-100">
                                     <td className="px-4 md:px-10 py-4 text-right text-[10px] uppercase tracking-widest">Promedio Exacto</td>
@@ -857,7 +859,6 @@ export default function CalificacionesPage() {
                                     <td className="text-center py-4 text-sm">{calcularPromedioCombinado(est.bloques[1] || [], est.bloques[2] || [], "u4")}</td>
                                   </tr>
                                 )}
-
                               </React.Fragment>
                             )
                           )

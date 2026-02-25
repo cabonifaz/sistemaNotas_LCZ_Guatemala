@@ -49,10 +49,7 @@ export async function loginAction(formData: FormData) {
   }
 }
 
-// ... EL RESTO DE TUS FUNCIONES EN ACTIONS.TS SE QUEDAN EXACTAMENTE IGUAL ...
-
 export async function obtenerPermisosUsuario() {
-  // 💡 APLICADO: await cookies() antes de usar .get()
   const cookieStore = await cookies();
   const sessionCookie = cookieStore.get('user_session');
   
@@ -60,9 +57,12 @@ export async function obtenerPermisosUsuario() {
 
   try {
     const user = JSON.parse(sessionCookie.value);
-    if (user.rol === 'Admin') {
-      return { rol: 'Admin', nombre: user.nombre, asignaciones: 'ALL' };
+    
+    // 💡 CORRECCIÓN: Ahora respetamos tanto al Admin como al Super usuario
+    if (user.rol === 'Admin' || user.rol === 'Super usuario') {
+      return { rol: user.rol, nombre: user.nombre, asignaciones: 'ALL' };
     }
+    
     const asignaciones: any = await ejecutarSP('sp_obtener_permisos', [user.id]);
     return { rol: 'Maestro', nombre: user.nombre, asignaciones: asignaciones || [] };
   } catch (error) {
@@ -247,5 +247,84 @@ export async function eliminarDocente(id_usuario: number) {
     return { success: true };
   } catch (error) {
     return { success: false };
+  }
+}
+
+export async function obtenerConfiguracionBimestres(anio: number) {
+  try {
+    // Como solo es un simple SELECT, lo ejecutaremos directo como consulta cruda a través de tu DB (asumiendo que ejecutarSP puede recibir queries planas si no, creamos otro SP)
+    // Pero lo ideal es usar ejecutarSP. Vamos a crear un SP para esto en el código de arriba.
+    const rows: any = await ejecutarSP('sp_obtener_configuracion', [anio]);
+    
+    if (rows && rows.length > 0) {
+      const config = rows[0];
+      const activas: number[] = [];
+      if (config.u1 === 1 || config.u1 === true) activas.push(1);
+      if (config.u2 === 1 || config.u2 === true) activas.push(2);
+      if (config.u3 === 1 || config.u3 === true) activas.push(3);
+      if (config.u4 === 1 || config.u4 === true) activas.push(4);
+      return activas;
+    }
+    return [1]; 
+  } catch (error) {
+    console.error("Error obteniendo config:", error);
+    return [1];
+  }
+}
+
+export async function guardarConfiguracionBimestres(anio: number, unidades: number[]) {
+  try {
+    const u1 = unidades.includes(1) ? 1 : 0;
+    const u2 = unidades.includes(2) ? 1 : 0;
+    const u3 = unidades.includes(3) ? 1 : 0;
+    const u4 = unidades.includes(4) ? 1 : 0;
+
+    // 💡 AHORA SÍ: Usamos tu función ejecutarSP para que no marque error
+    await ejecutarSP('sp_guardar_configuracion', [anio, u1, u2, u3, u4]);
+    return true;
+  } catch (error) {
+    console.error("Error guardando config:", error);
+    return false;
+  }
+}
+
+export async function obtenerConfiguracionActiva() {
+  try {
+    const rows: any = await ejecutarSP('sp_obtener_configuracion_activa', []);
+    
+    if (rows && rows.length > 0) {
+      const config = rows[0];
+      const activas: number[] = [];
+      if (config.u1 === 1 || config.u1 === true) activas.push(1);
+      if (config.u2 === 1 || config.u2 === true) activas.push(2);
+      if (config.u3 === 1 || config.u3 === true) activas.push(3);
+      if (config.u4 === 1 || config.u4 === true) activas.push(4);
+      // 💡 AHORA DEVOLVEMOS TAMBIÉN EL AÑO ACTIVO
+      return { anio: config.anio, activas }; 
+    }
+    return { anio: new Date().getFullYear(), activas: [1] }; 
+  } catch (error) {
+    console.error("Error obteniendo config:", error);
+    return { anio: new Date().getFullYear(), activas: [1] };
+  }
+}
+
+export async function obtenerConfiguracionPorAnio(anio: number) {
+  try {
+    const rows: any = await ejecutarSP('sp_obtener_configuracion', [anio]);
+    
+    if (rows && rows.length > 0) {
+      const config = rows[0];
+      const activas: number[] = [];
+      if (config.u1 === 1 || config.u1 === true) activas.push(1);
+      if (config.u2 === 1 || config.u2 === true) activas.push(2);
+      if (config.u3 === 1 || config.u3 === true) activas.push(3);
+      if (config.u4 === 1 || config.u4 === true) activas.push(4);
+      return activas;
+    }
+    return []; // 💡 Si el año es nuevo y no existe, devuelve todo bloqueado
+  } catch (error) {
+    console.error("Error obteniendo config por año:", error);
+    return [];
   }
 }
