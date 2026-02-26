@@ -7,6 +7,7 @@ import { BoletaPreKinder } from "./BoletaPreKinder";
 import { BoletaKinder } from "./BoletaKinder";
 import { BoletaPreparatoria } from "./BoletaPreparatoria";
 import { BoletaGeneral } from "./BoletaGeneral";
+import { BoletaPrimeroPrimaria } from "./BoletaPrimeroPrimaria";
 
 import {
   obtenerMatrizNotas,
@@ -120,7 +121,7 @@ export default function CalificacionesPage() {
     { id_materia: 7, materia: "Destrezas de Aprendizaje", tipo: "Texto_Prepa", u1: "", u2: "", u3: "", u4: "" },
     { id_materia: 8, materia: "Conocimiento de su mundo", tipo: "Texto_Prepa", u1: "", u2: "", u3: "", u4: "" },
     { id_materia: 9, materia: "Educación Cristiana", tipo: "Texto_Prepa", u1: "", u2: "", u3: "", u4: "" },
-    { id_materia: 10, materia: "Música", tipo: "Texto_Prepa", u1: "", u2: "", u3: "", u4: "" },
+    { id_materia: 10, materia: "Expresión Artística", tipo: "Texto_Prepa", u1: "", u2: "", u3: "", u4: "" }, // 💡 Restaurado
     { id_materia: 11, materia: "Idioma Inglés", tipo: "Texto_Prepa", u1: "", u2: "", u3: "", u4: "" },
     { id_materia: 12, materia: "Motricidad", tipo: "Texto_Prepa", u1: "", u2: "", u3: "", u4: "" },
   ];
@@ -202,7 +203,7 @@ export default function CalificacionesPage() {
       { id_materia: 106, materia: "Matemáticas", tipo: "Numerica", u1: "", u2: "", u3: "", u4: "" },
       { id_materia: 107, materia: "Medio Social", tipo: "Numerica", u1: "", u2: "", u3: "", u4: "" },
       { id_materia: 108, materia: "Medio Natural", tipo: "Numerica", u1: "", u2: "", u3: "", u4: "" },
-      { id_materia: 109, materia: "Música", tipo: "Numerica", u1: "", u2: "", u3: "", u4: "" },
+      { id_materia: 109, materia: "Expresión Artística", tipo: "Numerica", u1: "", u2: "", u3: "", u4: "" }, // 💡 Restaurado
       { id_materia: 110, materia: "Educación Física", tipo: "Numerica", u1: "", u2: "", u3: "", u4: "" },
       { id_materia: 111, materia: "Formación Ciudadana", tipo: "Numerica", u1: "", u2: "", u3: "", u4: "" },
       { id_materia: 112, materia: "Ortografía", tipo: "Numerica", u1: "", u2: "", u3: "", u4: "" },
@@ -304,7 +305,7 @@ export default function CalificacionesPage() {
       { id_materia: 219, materia: "Biología", tipo: "Numerica", u1: "", u2: "", u3: "", u4: "" },
       { id_materia: 217, materia: "Química", tipo: "Numerica", u1: "", u2: "", u3: "", u4: "" },
       { id_materia: 273, materia: "Ciencias Sociales y Formación Ciudadana 5", tipo: "Numerica", u1: "", u2: "", u3: "", u4: "" },
-      { id_materia: 229, materia: "Música", tipo: "Numerica", u1: "", u2: "", u3: "", u4: "" },
+      { id_materia: 229, materia: "Expresión Artística", tipo: "Numerica", u1: "", u2: "", u3: "", u4: "" }, // 💡 Restaurado
       { id_materia: 207, materia: "Seminario", tipo: "Numerica", u1: "", u2: "", u3: "", u4: "" },
       { id_materia: 242, materia: "Razonamiento Matemático", tipo: "Numerica", u1: "", u2: "", u3: "", u4: "" },
     ],
@@ -367,7 +368,7 @@ export default function CalificacionesPage() {
     ],
   };
 
-  // 💡 SE INVIRTIÓ EL ORDEN: Primero el ID 5 (Aprendizaje) y luego el ID 4 (Hábitos en casa)
+  // 💡 MANTENEMOS EL ORDEN INVERTIDO PARA QUE SALGA HÁBITOS AL FINAL EN LA WEB Y EN LA BOLETA GENERAL
   const areasPrimaria = [
     { id: 1, titulo: "1. Áreas Académicas" },
     { id: 2, titulo: "2. Programas Educativos Extracurriculares" },
@@ -679,7 +680,12 @@ export default function CalificacionesPage() {
     if (grado === "4") return <BoletaPreKinder alumno={estudiante} unidadActual={unidad} seccion={seccion} anio={anioEscolar} />;
     if (grado === "5") return <BoletaKinder alumno={estudiante} unidadActual={unidad} seccion={seccion} anio={anioEscolar} />;
     if (["11", "12", "13"].includes(grado)) return <BoletaNursery alumno={estudiante} unidadActual={unidad} seccion={seccion} anio={anioEscolar} />;
-    if (["6", "7", "2", "8", "9", "10", "14", "15", "16", "17", "18", "19", "20", "21"].includes(grado)) {
+    
+    // 💡 1ro Primaria usa su propia boleta
+    if (grado === "6") return <BoletaPrimeroPrimaria alumno={estudiante} unidadActual={unidad} seccion={seccion} anio={anioEscolar} />;
+    
+    // 💡 Los demás usan la General
+    if (["7", "2", "8", "9", "10", "14", "15", "16", "17", "18", "19", "20", "21"].includes(grado)) {
       return <BoletaGeneral alumno={estudiante} unidadActual={unidad} seccion={seccion} anio={anioEscolar} />;
     }
     return null;
