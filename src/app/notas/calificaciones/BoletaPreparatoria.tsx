@@ -2,7 +2,6 @@ import React from "react";
 
 export const BoletaPreparatoria = React.forwardRef(({ alumno, unidadActual = 3, seccion, anio }: any, ref: any) => {
   if (!alumno) return null;
-  const anioImprimir = anio || new Date().getFullYear();
   const numerosRomanos = ["I", "II", "III", "IV"];
   const tituloUnidad = `${numerosRomanos[unidadActual - 1]} UNIDAD`;
   const propNota = `u${unidadActual}`;
@@ -19,10 +18,7 @@ export const BoletaPreparatoria = React.forwardRef(({ alumno, unidadActual = 3, 
     <div ref={ref} className="relative bg-white w-[210mm] h-[297mm] text-slate-800 font-sans print:m-0 overflow-hidden">
       <img src="/fondo_boleta_preparatoria.jpg" className="absolute inset-0 w-full h-full object-fill z-0" alt="Fondo Preparatoria" />
       
-      {/* 💡 AÑO DINÁMICO */}
-      <div className="absolute top-[40px] left-[70px] w-[100px] text-center text-[50px] font-black text-red-400/80 tracking-widest z-10">
-        {anioImprimir}
-      </div>
+      {/* SE ELIMINÓ EL DIV DEL AÑO GIGANTE AQUÍ */}
 
       <div className="absolute top-[211px] left-[440px] text-[16px] font-bold text-blue-900 uppercase italic z-10 w-[320px]">
         <p className="mb-[13px]">{alumno.nombre}</p>
