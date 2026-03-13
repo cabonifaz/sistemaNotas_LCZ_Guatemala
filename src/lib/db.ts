@@ -1,6 +1,5 @@
 import mysql from 'mysql2/promise';
 
-// Configuración de la conexión leyendo variables de entorno
 export const pool = mysql.createPool({
   host: process.env.DB_HOST,
   port: Number(process.env.DB_PORT) || 3306,
