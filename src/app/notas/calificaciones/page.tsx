@@ -442,6 +442,15 @@ export default function CalificacionesPage() {
       u3: "",
       u4: "",
     },
+       {
+      id_materia: 11,
+      materia: "Idioma Inglés",
+      tipo: "Texto_Prepa",
+      u1: "",
+      u2: "",
+      u3: "",
+      u4: "",
+    }, // ✨ MATERIA AGREGADA AQUI
   ];
   const aspectosPreKinderBase = [
     {
@@ -516,6 +525,7 @@ export default function CalificacionesPage() {
       u3: "",
       u4: "",
     },
+ 
   ];
   const curricularesKinderBase = [
     {
@@ -1096,7 +1106,21 @@ export default function CalificacionesPage() {
       },
     ],
   };
-
+const materiasPrimariaAlta = [
+    { id_materia: 104, materia: "Idioma Materno", tipo: "Numerica", u1: "", u2: "", u3: "", u4: "" },
+    { id_materia: 105, materia: "Tercer Idioma (Inglés)", tipo: "Numerica", u1: "", u2: "", u3: "", u4: "" },
+    { id_materia: 106, materia: "Matemáticas", tipo: "Numerica", u1: "", u2: "", u3: "", u4: "" },
+    { id_materia: 200, materia: "Ciencias Sociales", tipo: "Numerica", u1: "", u2: "", u3: "", u4: "" }, // ✨ NUEVA
+    { id_materia: 246, materia: "Ciencias Naturales", tipo: "Numerica", u1: "", u2: "", u3: "", u4: "" }, // ✨ NUEVA
+    { id_materia: 109, materia: "Expresión Artística", tipo: "Numerica", u1: "", u2: "", u3: "", u4: "" },
+    { id_materia: 110, materia: "Educación Física", tipo: "Numerica", u1: "", u2: "", u3: "", u4: "" },
+    { id_materia: 111, materia: "Formación Ciudadana", tipo: "Numerica", u1: "", u2: "", u3: "", u4: "" },
+    { id_materia: 250, materia: "Productividad y Desarrollo", tipo: "Numerica", u1: "", u2: "", u3: "", u4: "" }, // ✨ NUEVA
+    { id_materia: 112, materia: "Ortografía", tipo: "Numerica", u1: "", u2: "", u3: "", u4: "" },
+    { id_materia: 113, materia: "Artes Plásticas", tipo: "Numerica", u1: "", u2: "", u3: "", u4: "" },
+    { id_materia: 114, materia: "Moral Cristiana", tipo: "Numerica", u1: "", u2: "", u3: "", u4: "" },
+    { id_materia: 115, materia: "Computación", tipo: "Numerica", u1: "", u2: "", u3: "", u4: "" },
+  ];
   const bloquesBasicoBase = {
     1: [
       {
@@ -2127,8 +2151,9 @@ export default function CalificacionesPage() {
               cur = curricularesPreparatoriaBase.map((m) => ({ ...m }));
               asp = aspectosPreparatoriaBase.map((m) => ({ ...m }));
             } else if (esPrimaria) {
+              const esPrimariaAlta = [8, 9, 10].includes(idGFinal); // 8=4to, 9=5to, 10=6to
               blqs = {
-                1: bloquesPrimariaBase[1].map((m) => ({ ...m })),
+                1: esPrimariaAlta ? materiasPrimariaAlta.map((m) => ({ ...m })) : bloquesPrimariaBase[1].map((m) => ({ ...m })),
                 2: bloquesPrimariaBase[2].map((m) => ({ ...m })),
                 3: bloquesPrimariaBase[3].map((m) => ({ ...m })),
                 4: bloquesPrimariaBase[4].map((m) => ({ ...m })),
@@ -2390,7 +2415,7 @@ export default function CalificacionesPage() {
           const finalDisabled = !editable || !unidadActiva;
           const valorNota = parseFloat(m[u]);
           const estaReprobado =
-            m.tipo === "Numerica" && !isNaN(valorNota) && valorNota < 69;
+            m.tipo === "Numerica" && !isNaN(valorNota) && valorNota < 60;
 
           return (
             <td key={u} className="px-1 md:px-3 py-4 text-center">
