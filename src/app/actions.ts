@@ -328,3 +328,38 @@ export async function obtenerConfiguracionPorAnio(anio: number) {
     return [];
   }
 }
+
+export async function editarAlumnoAction(formData: FormData) {
+    const id = formData.get('id_alumno');
+    const nombres = formData.get('nombres');
+    const apellidos = formData.get('apellidos');
+    const grado = formData.get('id_grado');
+    const seccion = formData.get('seccion');
+
+    try {
+        await ejecutarSP('sp_alumno_upd', [id, nombres, apellidos, grado, seccion]);
+        return { success: true };
+    } catch (error) {
+        console.error("Error al editar:", error);
+        return { success: false };
+    }
+}
+
+export async function actualizarEstudiante(
+  id: number, 
+  nombres: string, 
+  apellidos: string, 
+  grado: number, 
+  seccion: number
+) {
+  try {
+    // Aquí llamamos al Procedimiento Almacenado que creamos en DBeaver
+    // IMPORTANTE: Asegúrate de que la función 'ejecutarSP' esté disponible en este archivo
+    await ejecutarSP('sp_alumno_upd', [id, nombres, apellidos, grado, seccion]);
+    
+    return { success: true };
+  } catch (error) {
+    console.error("❌ Error en actualizarEstudiante:", error);
+    return { success: false, error: "No se pudo actualizar la información" };
+  }
+}
