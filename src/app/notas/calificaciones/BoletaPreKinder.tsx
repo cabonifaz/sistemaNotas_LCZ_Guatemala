@@ -32,7 +32,7 @@ export const BoletaPreKinder = React.forwardRef(({ alumno, unidadActual = 3, ani
         <table className="w-full border-collapse">
           <tbody>
             {(alumno.curriculares || []).map((m: any, idx: number) => (
-              <tr key={`curr-${idx}`} style={{ height: "72px" }}> 
+              <tr key={`curr-${idx}`} style={{ height: "62px" }}> 
                 <td className="w-[400px]"></td>
                 <td className="w-[350px] text-center text-[26px] font-black text-orange-500 italic align-middle pr-8">{m[propNota] || ""}</td>
               </tr>
