@@ -9,13 +9,14 @@ const BLOQUES_PRIMARIA = {
   5: { titulo: "Responsabilidad del estudiante con su aprendizaje", ids: [130, 131, 132, 133] },
 };
 
-export const BoletaPrimeroPrimaria = React.forwardRef(({ alumno, seccion }: any, ref: any) => {
+export const BoletaPrimeroPrimaria = React.forwardRef(({ alumno, seccion, anio }: any, ref: any) => {
   if (!alumno) return null;
 
   // 1. Datos Generales
   const textoGrado = "Primero Primaria";
   const textoSeccion = seccion === "1" ? "A" : seccion === "2" ? "B" : "Única";
   const nombreMaestro = alumno.maestro || "Docente no asignado";
+  const anioImprimir = anio || new Date().getFullYear(); // 👈 AGREGA ESTO
 
   // 2. Funciones de ayuda
   const getMaterias = (bloqueId: number) => alumno.bloques[bloqueId] || [];
@@ -40,6 +41,10 @@ export const BoletaPrimeroPrimaria = React.forwardRef(({ alumno, seccion }: any,
         className="absolute inset-0 w-full h-full object-fill z-0"
         alt="Fondo Boleta Primaria"
       />
+{/* 👈 AGREGA ESTE BLOQUE AQUÍ PARA EL AÑO */}
+      <div className="absolute top-[40px] left-[70px] w-[100px] text-center text-[50px] font-black text-red-400/80 tracking-widest z-10">
+        {anioImprimir}
+      </div>
 
       {/* DATOS DEL ESTUDIANTE (Posiciones ajustadas para no tapar los textos del fondo) */}
       <div className="absolute top-[200px] left-[250px] text-[12px] font-black text-[#17365D] uppercase tracking-wide z-10">

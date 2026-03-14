@@ -1110,12 +1110,15 @@ const materiasPrimariaAlta = [
     { id_materia: 104, materia: "Idioma Materno", tipo: "Numerica", u1: "", u2: "", u3: "", u4: "" },
     { id_materia: 105, materia: "Tercer Idioma (Inglés)", tipo: "Numerica", u1: "", u2: "", u3: "", u4: "" },
     { id_materia: 106, materia: "Matemáticas", tipo: "Numerica", u1: "", u2: "", u3: "", u4: "" },
-    { id_materia: 200, materia: "Ciencias Sociales", tipo: "Numerica", u1: "", u2: "", u3: "", u4: "" }, // ✨ NUEVA
-    { id_materia: 246, materia: "Ciencias Naturales", tipo: "Numerica", u1: "", u2: "", u3: "", u4: "" }, // ✨ NUEVA
+    { id_materia: 200, materia: "Ciencias Sociales", tipo: "Numerica", u1: "", u2: "", u3: "", u4: "" }, 
+    { id_materia: 246, materia: "Ciencias Naturales", tipo: "Numerica", u1: "", u2: "", u3: "", u4: "" }, 
     { id_materia: 109, materia: "Expresión Artística", tipo: "Numerica", u1: "", u2: "", u3: "", u4: "" },
     { id_materia: 110, materia: "Educación Física", tipo: "Numerica", u1: "", u2: "", u3: "", u4: "" },
     { id_materia: 111, materia: "Formación Ciudadana", tipo: "Numerica", u1: "", u2: "", u3: "", u4: "" },
-    { id_materia: 250, materia: "Productividad y Desarrollo", tipo: "Numerica", u1: "", u2: "", u3: "", u4: "" }, // ✨ NUEVA
+    
+    // 👇 ESTA LÍNEA DEBE QUEDAR EXACTAMENTE ASÍ 👇
+    { id_materia: 250, materia: "Productividad y Desarrollo", tipo: "Numerica", u1: "", u2: "", u3: "", u4: "" }, 
+    
     { id_materia: 112, materia: "Ortografía", tipo: "Numerica", u1: "", u2: "", u3: "", u4: "" },
     { id_materia: 113, materia: "Artes Plásticas", tipo: "Numerica", u1: "", u2: "", u3: "", u4: "" },
     { id_materia: 114, materia: "Moral Cristiana", tipo: "Numerica", u1: "", u2: "", u3: "", u4: "" },
@@ -2369,13 +2372,14 @@ const materiasPrimariaAlta = [
 
   const toggleAlumno = (idAlumno: number) => {
     if (expandidos.includes(idAlumno)) {
-      guardarNotasAlumno(idAlumno);
       setExpandidos((prev) => prev.filter((i) => i !== idAlumno));
     } else {
       setExpandidos((prev) => [...prev, idAlumno]);
     }
   };
 
+  // ❌ AUTOGUARDADO ELIMINADO SEGÚN SOLICITUD
+  /*
   useEffect(() => {
     if (expandidos.length === 0) return;
     const interval = setInterval(() => {
@@ -2385,6 +2389,7 @@ const materiasPrimariaAlta = [
     }, INTERVALO_AUTOSAVE_MS);
     return () => clearInterval(interval);
   }, [expandidos]);
+  */
 
   const toggleUnidad = (numUnidad: number) => {
     setUnidadesHabilitadas((prev) => {
@@ -2659,13 +2664,14 @@ const materiasPrimariaAlta = [
                   </div>
                 )}
 
+                {/* 👇 INDICADOR MODIFICADO: AHORA DICE MANUAL 👇 */}
                 <div className="flex items-center gap-2 bg-slate-50 text-slate-500 px-4 py-3 rounded-2xl border border-slate-200 shadow-sm">
-                  <div className="w-2 h-2 bg-slate-400 rounded-full animate-pulse"></div>
+                  <div className="w-2 h-2 bg-yellow-400 rounded-full"></div>
                   <span className="text-[10px] font-black uppercase tracking-wider hidden sm:inline-block">
-                    Autoguardado Activo
+                    Guardado Manual
                   </span>
                   <span className="text-[10px] font-black uppercase tracking-wider sm:hidden">
-                    Guardando
+                    Manual
                   </span>
                 </div>
               </div>
@@ -2715,27 +2721,55 @@ const materiasPrimariaAlta = [
 
               {estaAbierto && (
                 <div className="p-2 md:p-4 overflow-x-auto bg-white">
-                  {(permisos?.rol === "Admin" ||
-                    permisos?.rol === "Super usuario") && (
-                    <div className="flex justify-end gap-2 mb-4 flex-wrap">
-                      {unidadesHabilitadas.map((unidad) => {
-                        const romanos = ["I", "II", "III", "IV"];
-                        return (
-                          <button
-                            key={unidad}
-                            onClick={() => {
-                              setUnidadAImprimir(unidad);
-                              setAlumnoParaImprimir(est);
-                              setTimeout(() => handlePrint(), 300);
-                            }}
-                            className="bg-white border border-gray-200 text-gray-600 px-4 py-2 rounded-xl font-black text-[10px] uppercase hover:bg-red-600 hover:text-white hover:border-red-600 transition-all shadow-sm flex items-center gap-2"
-                          >
-                            <span>🖨️</span> {romanos[unidad - 1]} UNIDAD
-                          </button>
-                        );
-                      })}
-                    </div>
-                  )}
+                  
+                  {/* CONTENEDOR FLEX PARA BOTONES SUPERIORES */}
+                  <div className="flex justify-between items-center mb-4 flex-wrap gap-4">
+                    
+                    {/* BOTÓN DE GUARDAR MANUAL */}
+                    <button
+                      onClick={() => guardarNotasAlumno(est.id_alumno)}
+                      disabled={estaGuardandoEsteAlumno}
+                      className={`px-6 py-3 rounded-xl font-black text-[10px] uppercase tracking-widest shadow-sm flex items-center gap-2 transition-all ${
+                        estaGuardandoEsteAlumno
+                          ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+                          : "bg-[#17365D] text-white hover:bg-slate-800 hover:scale-105 active:scale-95"
+                      }`}
+                    >
+                      {estaGuardandoEsteAlumno ? (
+                        <>
+                          <div className="w-3 h-3 border-2 border-gray-300 border-t-gray-500 rounded-full animate-spin"></div>
+                          Guardando...
+                        </>
+                      ) : (
+                        <>
+                          <span>💾</span> Guardar Notas
+                        </>
+                      )}
+                    </button>
+
+                    {/* BOTONES DE IMPRIMIR */}
+                    {(permisos?.rol === "Admin" ||
+                      permisos?.rol === "Super usuario") && (
+                      <div className="flex gap-2 flex-wrap">
+                        {unidadesHabilitadas.map((unidad) => {
+                          const romanos = ["I", "II", "III", "IV"];
+                          return (
+                            <button
+                              key={unidad}
+                              onClick={() => {
+                                setUnidadAImprimir(unidad);
+                                setAlumnoParaImprimir(est);
+                                setTimeout(() => handlePrint(), 300);
+                              }}
+                              className="bg-white border border-gray-200 text-gray-600 px-4 py-2 rounded-xl font-black text-[10px] uppercase hover:bg-red-600 hover:text-white hover:border-red-600 transition-all shadow-sm flex items-center gap-2"
+                            >
+                              <span>🖨️</span> {romanos[unidad - 1]} UNIDAD
+                            </button>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
 
                   <table className="w-full min-w-[600px]">
                     <thead className="bg-gray-50 text-[10px] text-gray-400 uppercase font-black tracking-widest text-center border-b border-gray-100">

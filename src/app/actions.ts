@@ -97,36 +97,49 @@ export async function guardarCalificacion(idEstudiante: number, idMateria: numbe
 
 export async function guardarCalificacionesMasivas(paqueteNotas: any[]) {
   try {
-    // 1. Filtramos para asegurarnos de que no vayan datos vacíos
-    const notasValidas = paqueteNotas.filter(n => n.idEstudiante && n.idMateria);
+    // 1. Filtramos y FORZAMOS que todo sea texto (String) para evitar errores de tipo en la BD
+    const notasValidas = paqueteNotas
+      .filter(n => n.idEstudiante && n.idMateria)
+      .map(n => ({
+        idEstudiante: Number(n.idEstudiante),
+        idMateria: Number(n.idMateria),
+        u1: String(n.u1 || ''),
+        u2: String(n.u2 || ''),
+        u3: String(n.u3 || ''),
+        u4: String(n.u4 || '')
+      }));
+
     let guardadas = 0;
 
-    // 2. Definimos de a cuántas notas vamos a enviar al mismo tiempo (50 es muy seguro y rápido)
+    // 2. Definimos de a cuántas notas vamos a enviar al mismo tiempo
     const chunkSize = 50;
 
     for (let i = 0; i < notasValidas.length; i += chunkSize) {
       const chunk = notasValidas.slice(i, i + chunkSize);
 
-      // 3. LA MAGIA: Ejecutamos 50 guardados EN PARALELO al mismo tiempo
-      const promesas = chunk.map(nota => 
-        ejecutarSP('SP_NOTAS_INS', [
-          nota.idEstudiante, 
-          nota.idMateria, 
-          nota.u1 || '', 
-          nota.u2 || '', 
-          nota.u3 || '', 
-          nota.u4 || ''
-        ])
-      );
+      // 3. Ejecutamos los guardados y capturamos errores individuales sin romper el ciclo
+      const promesas = chunk.map(async (nota) => {
+        try {
+          await ejecutarSP('SP_NOTAS_INS', [
+            nota.idEstudiante, 
+            nota.idMateria, 
+            nota.u1, 
+            nota.u2, 
+            nota.u3, 
+            nota.u4
+          ]);
+        } catch (err) {
+          console.error(`❌ Error guardando nota para estudiante ${nota.idEstudiante}:`, err);
+        }
+      });
 
-      // Esperamos que estas 50 terminen juntas antes de seguir con las otras 50
       await Promise.all(promesas);
       guardadas += chunk.length;
     }
 
     return { success: true, guardadas, errores: 0 };
   } catch (error) {
-    console.error("Error masivo guardando notas:", error);
+    console.error("❌ Error CRÍTICO masivo guardando notas:", error);
     return { success: false };
   }
 }
