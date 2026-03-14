@@ -17,6 +17,7 @@ export default function EstudiantesPage() {
   
   // 💡 NUEVO ESTADO DE PERMISOS
   const [permisos, setPermisos] = useState<any>(null);
+  
 
   const NIVELES = [
     {
