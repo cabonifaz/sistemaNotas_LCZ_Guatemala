@@ -2,7 +2,7 @@
 import { ejecutarSP } from '../lib/db';
 import { redirect } from 'next/navigation';
 import { cookies } from 'next/headers'; 
-import crypto from 'crypto'; // 💡 IMPORTACIÓN NATIVA PARA ENCRIPTAR (No requiere instalación)
+import crypto from 'crypto'; 
 
 export async function loginAction(formData: FormData) {
   const username = formData.get('username') as string;
@@ -12,10 +12,7 @@ export async function loginAction(formData: FormData) {
   let hasError = false;
 
   try {
-    // 💡 LA MAGIA: Encriptamos la contraseña a SHA-256 para que el texto original no viaje a la BD
     const hashedPassword = crypto.createHash('sha256').update(password).digest('hex');
-
-    // Enviamos el hash al SP, no la contraseña real
     const usuarios: any = await ejecutarSP('sp_login_usuario', [username, hashedPassword]);
     
     if (usuarios && usuarios.length > 0) {
@@ -58,7 +55,6 @@ export async function obtenerPermisosUsuario() {
   try {
     const user = JSON.parse(sessionCookie.value);
     
-    // 💡 CORRECCIÓN: Ahora respetamos tanto al Admin como al Super usuario
     if (user.rol === 'Admin' || user.rol === 'Super usuario') {
       return { rol: user.rol, nombre: user.nombre, asignaciones: 'ALL' };
     }
@@ -71,7 +67,6 @@ export async function obtenerPermisosUsuario() {
 }
 
 export async function logoutAction() {
-  // 💡 APLICADO: await cookies() antes de usar .delete()
   const cookieStore = await cookies();
   cookieStore.delete('user_session');
   redirect('/');
@@ -97,7 +92,6 @@ export async function guardarCalificacion(idEstudiante: number, idMateria: numbe
 
 export async function guardarCalificacionesMasivas(paqueteNotas: any[]) {
   try {
-    // 1. Filtramos y FORZAMOS que todo sea texto (String) para evitar errores de tipo en la BD
     const notasValidas = paqueteNotas
       .filter(n => n.idEstudiante && n.idMateria)
       .map(n => ({
@@ -110,14 +104,10 @@ export async function guardarCalificacionesMasivas(paqueteNotas: any[]) {
       }));
 
     let guardadas = 0;
-
-    // 2. Definimos de a cuántas notas vamos a enviar al mismo tiempo
     const chunkSize = 50;
 
     for (let i = 0; i < notasValidas.length; i += chunkSize) {
       const chunk = notasValidas.slice(i, i + chunkSize);
-
-      // 3. Ejecutamos los guardados y capturamos errores individuales sin romper el ciclo
       const promesas = chunk.map(async (nota) => {
         try {
           await ejecutarSP('SP_NOTAS_INS', [
@@ -177,17 +167,12 @@ export async function obtenerEstadisticasDashboard() {
 export async function obtenerMaestroTitular(grado: number, seccion: number) {
   try {
     const maestro: any = await ejecutarSP('sp_obtener_maestro_titular', [grado, seccion]);
-    // Si encuentra al maestro, devuelve su nombre. Si no, devuelve el texto por defecto.
     return maestro && maestro.length > 0 ? maestro[0].nombre_completo : "Docente no asignado";
   } catch (error) {
     console.error("Error obteniendo maestro:", error);
     return "Docente no asignado";
   }
 }
-
-// ==========================================
-// NUEVAS FUNCIONES PARA GESTIÓN DE DOCENTES
-// ==========================================
 
 export async function obtenerDocentes() {
   try {
@@ -201,7 +186,6 @@ export async function obtenerDocentes() {
 export async function crearNuevoDocente(nombre: string, correo: string, pass: string, rol: string) {
   try {
     const hashedPassword = crypto.createHash('sha256').update(pass).digest('hex');
-    // 💡 AHORA ENVIAMOS EL ROL AL PROCEDIMIENTO ALMACENADO
     await ejecutarSP('sp_docentes_ins', [nombre, correo, hashedPassword, rol]);
     return { success: true };
   } catch (error) {
@@ -265,10 +249,7 @@ export async function eliminarDocente(id_usuario: number) {
 
 export async function obtenerConfiguracionBimestres(anio: number) {
   try {
-    // Como solo es un simple SELECT, lo ejecutaremos directo como consulta cruda a través de tu DB (asumiendo que ejecutarSP puede recibir queries planas si no, creamos otro SP)
-    // Pero lo ideal es usar ejecutarSP. Vamos a crear un SP para esto en el código de arriba.
     const rows: any = await ejecutarSP('sp_obtener_configuracion', [anio]);
-    
     if (rows && rows.length > 0) {
       const config = rows[0];
       const activas: number[] = [];
@@ -291,8 +272,6 @@ export async function guardarConfiguracionBimestres(anio: number, unidades: numb
     const u2 = unidades.includes(2) ? 1 : 0;
     const u3 = unidades.includes(3) ? 1 : 0;
     const u4 = unidades.includes(4) ? 1 : 0;
-
-    // 💡 AHORA SÍ: Usamos tu función ejecutarSP para que no marque error
     await ejecutarSP('sp_guardar_configuracion', [anio, u1, u2, u3, u4]);
     return true;
   } catch (error) {
@@ -304,7 +283,6 @@ export async function guardarConfiguracionBimestres(anio: number, unidades: numb
 export async function obtenerConfiguracionActiva() {
   try {
     const rows: any = await ejecutarSP('sp_obtener_configuracion_activa', []);
-    
     if (rows && rows.length > 0) {
       const config = rows[0];
       const activas: number[] = [];
@@ -312,7 +290,6 @@ export async function obtenerConfiguracionActiva() {
       if (config.u2 === 1 || config.u2 === true) activas.push(2);
       if (config.u3 === 1 || config.u3 === true) activas.push(3);
       if (config.u4 === 1 || config.u4 === true) activas.push(4);
-      // 💡 AHORA DEVOLVEMOS TAMBIÉN EL AÑO ACTIVO
       return { anio: config.anio, activas }; 
     }
     return { anio: new Date().getFullYear(), activas: [1] }; 
@@ -325,7 +302,6 @@ export async function obtenerConfiguracionActiva() {
 export async function obtenerConfiguracionPorAnio(anio: number) {
   try {
     const rows: any = await ejecutarSP('sp_obtener_configuracion', [anio]);
-    
     if (rows && rows.length > 0) {
       const config = rows[0];
       const activas: number[] = [];
@@ -335,7 +311,7 @@ export async function obtenerConfiguracionPorAnio(anio: number) {
       if (config.u4 === 1 || config.u4 === true) activas.push(4);
       return activas;
     }
-    return []; // 💡 Si el año es nuevo y no existe, devuelve todo bloqueado
+    return []; 
   } catch (error) {
     console.error("Error obteniendo config por año:", error);
     return [];
@@ -358,21 +334,22 @@ export async function editarAlumnoAction(formData: FormData) {
     }
 }
 
-export async function actualizarEstudiante(
-  id: number, 
-  nombres: string, 
-  apellidos: string, 
-  grado: number, 
-  seccion: number
-) {
+export async function actualizarEstudiante(id: number, nombres: string, apellidos: string, grado: number, seccion: number) {
   try {
-    // Aquí llamamos al Procedimiento Almacenado que creamos en DBeaver
-    // IMPORTANTE: Asegúrate de que la función 'ejecutarSP' esté disponible en este archivo
     await ejecutarSP('sp_alumno_upd', [id, nombres, apellidos, grado, seccion]);
-    
     return { success: true };
   } catch (error) {
     console.error("❌ Error en actualizarEstudiante:", error);
     return { success: false, error: "No se pudo actualizar la información" };
+  }
+}
+
+export async function asignarMaestroTitularAction(id_usuario: number, id_grado: number, seccion: number) {
+  try {
+    await ejecutarSP('sp_asignar_titular', [id_usuario, id_grado, seccion]);
+    return { success: true };
+  } catch (error) {
+    console.error("Error asignando titular:", error);
+    return { success: false };
   }
 }
