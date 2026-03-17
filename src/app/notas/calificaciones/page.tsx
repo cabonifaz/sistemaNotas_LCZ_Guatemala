@@ -59,6 +59,152 @@ export default function CalificacionesPage() {
     }, 800);
   };
 
+  // 💡 FUNCIÓN EXCEL MEJORADA (Comas internas arregladas y nombres de archivos dinámicos)
+// 💡 FUNCIÓN EXCEL DEFINITIVA (Mayúsculas, Título de Bimestre y "Promedio" de Letras para Pre-Primaria)
+  const descargarCuadroNotas = () => {
+    if (estudiantesAgrupados.length === 0) return alert("No hay alumnos para exportar.");
+
+    // Encontrar qué unidad está habilitada.
+    const unidadExportar = unidadesHabilitadas.length > 0 ? Math.max(...unidadesHabilitadas) : 1;
+    const campoUnidad = `u${unidadExportar}`;
+
+    // 1. Extraer todas las materias únicas de los estudiantes para formar las columnas
+    const materiasSet = new Map();
+    estudiantesAgrupados.forEach((est) => {
+      const extraerMaterias = (lista: any[]) => {
+        if (!lista) return;
+        lista.forEach(m => {
+          if (!materiasSet.has(m.id_materia)) {
+            materiasSet.set(m.id_materia, m.materia);
+          }
+        });
+      };
+
+      if (["11", "12", "13", "4", "5", "1"].includes(est.id_grado.toString())) {
+        extraerMaterias(est.curriculares);
+        extraerMaterias(est.aspectos);
+      } else {
+        Object.values(est.bloques).forEach((bloque: any) => extraerMaterias(bloque));
+      }
+    });
+
+    const materiasNombres = Array.from(materiasSet.values());
+    const materiasIds = Array.from(materiasSet.keys());
+
+    // 2. Preparar el archivo
+    let csvContent = "\uFEFF";
+    
+    // 💡 AGREGAMOS EL TÍTULO DEL BIMESTRE ADENTRO DEL EXCEL
+    csvContent += `"CUADRO DE NOTAS - UNIDAD ${unidadExportar}"\n\n`;
+
+    const cabeceras = ["Nombre del Alumno", ...materiasNombres.map(m => `"${m}"`), "Promedio General"];
+    csvContent += cabeceras.join(",") + "\n";
+
+    // 3. Recorrer cada estudiante y generar su fila
+    estudiantesAgrupados
+      .sort((a, b) => a.nombre.localeCompare(b.nombre)) // Orden alfabético
+      .forEach((est) => {
+        // 💡 FORZAMOS A MAYÚSCULAS PARA CORREGIR NOMBRES COMO "PeñA"
+        let fila = `"${est.nombre.toUpperCase()}",`; 
+        
+        // Variables para promedios numéricos
+        let sumaNotas = 0;
+        let materiasConNota = 0;
+        
+        // Variables para la "Moda" (Letra que más se repite en Pre-Primaria)
+        let notasTexto: string[] = [];
+
+        materiasIds.forEach(idMateria => {
+          let notaEncontrada: any = "";
+          let esNumerica = false;
+          let encontrada = false;
+
+          const buscarEn = (lista: any[]) => {
+            if (!lista || encontrada) return;
+            const m = lista.find(item => item.id_materia === idMateria);
+            if (m) {
+              notaEncontrada = m[campoUnidad];
+              if (m.tipo === "Numerica") esNumerica = true;
+              encontrada = true;
+            }
+          };
+
+          if (["11", "12", "13", "4", "5", "1"].includes(est.id_grado.toString())) {
+            buscarEn(est.curriculares);
+            buscarEn(est.aspectos);
+          } else {
+            Object.values(est.bloques).forEach((bloque: any) => {
+              buscarEn(bloque);
+            });
+          }
+
+          // Procesar la nota encontrada
+          if (notaEncontrada !== "" && notaEncontrada !== undefined) {
+            if (esNumerica && !isNaN(parseFloat(notaEncontrada))) {
+              // Es un número, lo sumamos al promedio
+              const num = parseFloat(notaEncontrada);
+              if (num > 0) {
+                sumaNotas += num;
+                materiasConNota++;
+              }
+            } else if (!esNumerica) {
+              // Es una letra (A, F, NM, DESTACA, etc), la guardamos en la lista
+              notasTexto.push(notaEncontrada);
+            }
+          }
+
+          // Agregar la nota a la fila
+          fila += `"${notaEncontrada || ""}",`;
+        });
+
+        // 4. CALCULAR EL PROMEDIO O LA LETRA QUE MÁS SE REPITE
+        let promedioFinal: string | number = "";
+        const esPrePrimaria = ["11", "12", "13", "4", "5", "1"].includes(est.id_grado.toString());
+
+        if (esPrePrimaria) {
+          // Lógica para descubrir la letra que más sacó (La Moda)
+          if (notasTexto.length > 0) {
+            const conteoLetras: any = {};
+            let maxRepeticiones = 0;
+            let letraGanadora = "";
+
+            notasTexto.forEach(letra => {
+              conteoLetras[letra] = (conteoLetras[letra] || 0) + 1;
+              if (conteoLetras[letra] > maxRepeticiones) {
+                maxRepeticiones = conteoLetras[letra];
+                letraGanadora = letra;
+              }
+            });
+            promedioFinal = letraGanadora; // Ej. "A" o "DESTACA"
+          }
+        } else {
+          // Lógica tradicional para promedios numéricos
+          promedioFinal = materiasConNota > 0 ? Math.round(sumaNotas / materiasConNota) : "";
+        }
+
+        fila += `"${promedioFinal}"\n`;
+        csvContent += fila;
+      });
+
+    // 5. Determinar el nombre del archivo dinámicamente
+    const objGrado = NIVELES.flatMap((n) => n.grados).find((g) => g.id === grado);
+    const nombreGrado = objGrado ? objGrado.nombre : "Grado";
+    const objSeccion = objGrado?.secciones.find(s => s.id === seccion);
+    const nombreSeccion = objSeccion ? (objSeccion.label === "Única" ? "Unica" : objSeccion.label) : "A";
+
+    const nombreArchivo = `${nombreGrado}_Seccion_${nombreSeccion}_Unidad${unidadExportar}.csv`.replace(/ /g, "_");
+
+    // 6. Crear archivo y forzar descarga
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.setAttribute("download", nombreArchivo);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   const NIVELES = [
     {
       nivel: "Pre-Primaria",
@@ -283,7 +429,7 @@ export default function CalificacionesPage() {
       u2: "",
       u3: "",
       u4: "",
-    }, // 💡 Restaurado
+    }, 
     {
       id_materia: 11,
       materia: "Idioma Inglés",
@@ -450,7 +596,7 @@ export default function CalificacionesPage() {
       u2: "",
       u3: "",
       u4: "",
-    }, // ✨ MATERIA AGREGADA AQUI
+    }, 
   ];
   const aspectosPreKinderBase = [
     {
@@ -525,7 +671,6 @@ export default function CalificacionesPage() {
       u3: "",
       u4: "",
     },
- 
   ];
   const curricularesKinderBase = [
     {
@@ -879,7 +1024,7 @@ export default function CalificacionesPage() {
         u2: "",
         u3: "",
         u4: "",
-      }, // 💡 Restaurado
+      }, 
       {
         id_materia: 110,
         materia: "Educación Física",
@@ -1116,7 +1261,6 @@ const materiasPrimariaAlta = [
     { id_materia: 110, materia: "Educación Física", tipo: "Numerica", u1: "", u2: "", u3: "", u4: "" },
     { id_materia: 111, materia: "Formación Ciudadana", tipo: "Numerica", u1: "", u2: "", u3: "", u4: "" },
     
-    // 👇 ESTA LÍNEA DEBE QUEDAR EXACTAMENTE ASÍ 👇
     { id_materia: 250, materia: "Productividad y Desarrollo", tipo: "Numerica", u1: "", u2: "", u3: "", u4: "" }, 
     
     { id_materia: 112, materia: "Ortografía", tipo: "Numerica", u1: "", u2: "", u3: "", u4: "" },
@@ -1582,7 +1726,7 @@ const materiasPrimariaAlta = [
         u2: "",
         u3: "",
         u4: "",
-      }, // 💡 Restaurado
+      }, 
       {
         id_materia: 207,
         materia: "Seminario",
@@ -2378,19 +2522,6 @@ const materiasPrimariaAlta = [
     }
   };
 
-  // ❌ AUTOGUARDADO ELIMINADO SEGÚN SOLICITUD
-  /*
-  useEffect(() => {
-    if (expandidos.length === 0) return;
-    const interval = setInterval(() => {
-      expandidos.forEach((id) => {
-        guardarNotasAlumno(id);
-      });
-    }, INTERVALO_AUTOSAVE_MS);
-    return () => clearInterval(interval);
-  }, [expandidos]);
-  */
-
   const toggleUnidad = (numUnidad: number) => {
     setUnidadesHabilitadas((prev) => {
       if (prev.includes(numUnidad)) return prev.filter((u) => u !== numUnidad);
@@ -2648,6 +2779,19 @@ const materiasPrimariaAlta = [
                 {(permisos?.rol === "Admin" ||
                   permisos?.rol === "Super usuario") && (
                   <div className="flex gap-1 md:gap-2 mr-2 border-r border-gray-200 pr-2 md:pr-4 items-center">
+                    
+                    {/* 💡 BOTÓN EXCEL (Visible solo para Súper Admin o Admin) */}
+                    <button
+                      onClick={descargarCuadroNotas}
+                      className="mr-4 flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg font-black text-[10px] uppercase shadow-sm hover:bg-green-700 transition-all active:scale-95"
+                      title="Descargar matriz de notas en formato Excel"
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                      </svg>
+                      Excel
+                    </button>
+
                     <span className="text-[9px] font-black text-gray-400 hidden md:inline-block mr-2 uppercase tracking-tight">
                       Imprimir Todos:
                     </span>
@@ -2664,7 +2808,6 @@ const materiasPrimariaAlta = [
                   </div>
                 )}
 
-                {/* 👇 INDICADOR MODIFICADO: AHORA DICE MANUAL 👇 */}
                 <div className="flex items-center gap-2 bg-slate-50 text-slate-500 px-4 py-3 rounded-2xl border border-slate-200 shadow-sm">
                   <div className="w-2 h-2 bg-yellow-400 rounded-full"></div>
                   <span className="text-[10px] font-black uppercase tracking-wider hidden sm:inline-block">
@@ -2722,10 +2865,8 @@ const materiasPrimariaAlta = [
               {estaAbierto && (
                 <div className="p-2 md:p-4 overflow-x-auto bg-white">
                   
-                  {/* CONTENEDOR FLEX PARA BOTONES SUPERIORES */}
                   <div className="flex justify-between items-center mb-4 flex-wrap gap-4">
                     
-                    {/* BOTÓN DE GUARDAR MANUAL */}
                     <button
                       onClick={() => guardarNotasAlumno(est.id_alumno)}
                       disabled={estaGuardandoEsteAlumno}
@@ -2747,7 +2888,6 @@ const materiasPrimariaAlta = [
                       )}
                     </button>
 
-                    {/* BOTONES DE IMPRIMIR */}
                     {(permisos?.rol === "Admin" ||
                       permisos?.rol === "Super usuario") && (
                       <div className="flex gap-2 flex-wrap">

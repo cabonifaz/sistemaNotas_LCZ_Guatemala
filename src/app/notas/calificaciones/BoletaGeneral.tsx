@@ -91,7 +91,7 @@ export const BoletaGeneral = React.forwardRef(
 
     const renderNotaCell = (nota: string | number | undefined) => {
       const num = parseFloat(String(nota));
-      const isReprobado = !isNaN(num) && num < 60;
+      const isReprobado = !isNaN(num) && num < 40;
       const textColor = isReprobado ? "text-red-600" : "text-slate-800";
       return (
         <td

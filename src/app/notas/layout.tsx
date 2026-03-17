@@ -71,7 +71,7 @@ export default function NotasLayout({
         <div className="p-8 pb-6 text-center border-b border-gray-50 hidden md:block">
           <h2 className="text-xl font-black text-gray-800 leading-none tracking-tighter uppercase">
             {usuario?.rol === "Super usuario"
-              ? "Súper User"
+              ? "Súper Usuario"
               : usuario?.rol === "Admin"
                 ? "Admin"
                 : "Profesor"}
