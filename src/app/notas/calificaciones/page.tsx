@@ -8,6 +8,7 @@ import { BoletaKinder } from "./BoletaKinder";
 import { BoletaPreparatoria } from "./BoletaPreparatoria";
 import { BoletaGeneral } from "./BoletaGeneral";
 import { BoletaPrimeroPrimaria } from "./BoletaPrimeroPrimaria";
+import * as XLSX from "xlsx";
 
 import {
   obtenerMatrizNotas,
@@ -59,8 +60,7 @@ export default function CalificacionesPage() {
     }, 800);
   };
 
-  // 💡 FUNCIÓN EXCEL MEJORADA (Comas internas arregladas y nombres de archivos dinámicos)
-// 💡 FUNCIÓN EXCEL DEFINITIVA (Mayúsculas, Título de Bimestre y "Promedio" de Letras para Pre-Primaria)
+// 💡 FUNCIÓN EXCEL XLSX NATIVA
   const descargarCuadroNotas = () => {
     if (estudiantesAgrupados.length === 0) return alert("No hay alumnos para exportar.");
 
@@ -73,7 +73,7 @@ export default function CalificacionesPage() {
     estudiantesAgrupados.forEach((est) => {
       const extraerMaterias = (lista: any[]) => {
         if (!lista) return;
-        lista.forEach(m => {
+        lista.forEach((m) => {
           if (!materiasSet.has(m.id_materia)) {
             materiasSet.set(m.id_materia, m.materia);
           }
@@ -91,37 +91,38 @@ export default function CalificacionesPage() {
     const materiasNombres = Array.from(materiasSet.values());
     const materiasIds = Array.from(materiasSet.keys());
 
-    // 2. Preparar el archivo
-    let csvContent = "\uFEFF";
+    // 2. Preparar los datos en formato de "Arreglo de Arreglos" para XLSX
+    const excelData: any[][] = [];
+
+    // Fila 1: Título principal
+    excelData.push([`CUADRO DE NOTAS - UNIDAD ${unidadExportar}`]);
     
-    // 💡 AGREGAMOS EL TÍTULO DEL BIMESTRE ADENTRO DEL EXCEL
-    csvContent += `"CUADRO DE NOTAS - UNIDAD ${unidadExportar}"\n\n`;
+    // Fila 2: Espacio en blanco para que se vea bonito
+    excelData.push([]);
 
-    const cabeceras = ["Nombre del Alumno", ...materiasNombres.map(m => `"${m}"`), "Promedio General"];
-    csvContent += cabeceras.join(",") + "\n";
+    // Fila 3: Las Cabeceras de las columnas
+    const cabeceras = ["Nombre del Alumno", ...materiasNombres, "Promedio General"];
+    excelData.push(cabeceras);
 
-    // 3. Recorrer cada estudiante y generar su fila
+    // 3. Recorrer cada estudiante y generar su fila de notas
     estudiantesAgrupados
       .sort((a, b) => a.nombre.localeCompare(b.nombre)) // Orden alfabético
       .forEach((est) => {
-        // 💡 FORZAMOS A MAYÚSCULAS PARA CORREGIR NOMBRES COMO "PeñA"
-        let fila = `"${est.nombre.toUpperCase()}",`; 
-        
-        // Variables para promedios numéricos
+        // Inicializamos la fila forzando el nombre a mayúsculas
+        const fila: any[] = [est.nombre.toUpperCase()];
+
         let sumaNotas = 0;
         let materiasConNota = 0;
-        
-        // Variables para la "Moda" (Letra que más se repite en Pre-Primaria)
         let notasTexto: string[] = [];
 
-        materiasIds.forEach(idMateria => {
+        materiasIds.forEach((idMateria) => {
           let notaEncontrada: any = "";
           let esNumerica = false;
           let encontrada = false;
 
           const buscarEn = (lista: any[]) => {
             if (!lista || encontrada) return;
-            const m = lista.find(item => item.id_materia === idMateria);
+            const m = lista.find((item) => item.id_materia === idMateria);
             if (m) {
               notaEncontrada = m[campoUnidad];
               if (m.tipo === "Numerica") esNumerica = true;
@@ -138,71 +139,69 @@ export default function CalificacionesPage() {
             });
           }
 
-          // Procesar la nota encontrada
+          // Guardamos las notas. Si es número, lo insertamos como número real para Excel
           if (notaEncontrada !== "" && notaEncontrada !== undefined) {
             if (esNumerica && !isNaN(parseFloat(notaEncontrada))) {
-              // Es un número, lo sumamos al promedio
               const num = parseFloat(notaEncontrada);
               if (num > 0) {
                 sumaNotas += num;
                 materiasConNota++;
               }
+              fila.push(num); // Como número real
             } else if (!esNumerica) {
-              // Es una letra (A, F, NM, DESTACA, etc), la guardamos en la lista
               notasTexto.push(notaEncontrada);
+              fila.push(notaEncontrada); // Como texto
+            } else {
+              fila.push(notaEncontrada);
             }
+          } else {
+            fila.push(""); // Celda vacía
           }
-
-          // Agregar la nota a la fila
-          fila += `"${notaEncontrada || ""}",`;
         });
 
-        // 4. CALCULAR EL PROMEDIO O LA LETRA QUE MÁS SE REPITE
-        let promedioFinal: string | number = "";
+        // 4. Calcular Promedio o Letra
+        let promedioFinal: any = "";
         const esPrePrimaria = ["11", "12", "13", "4", "5", "1"].includes(est.id_grado.toString());
 
         if (esPrePrimaria) {
-          // Lógica para descubrir la letra que más sacó (La Moda)
           if (notasTexto.length > 0) {
             const conteoLetras: any = {};
             let maxRepeticiones = 0;
             let letraGanadora = "";
 
-            notasTexto.forEach(letra => {
+            notasTexto.forEach((letra) => {
               conteoLetras[letra] = (conteoLetras[letra] || 0) + 1;
               if (conteoLetras[letra] > maxRepeticiones) {
                 maxRepeticiones = conteoLetras[letra];
                 letraGanadora = letra;
               }
             });
-            promedioFinal = letraGanadora; // Ej. "A" o "DESTACA"
+            promedioFinal = letraGanadora;
           }
         } else {
-          // Lógica tradicional para promedios numéricos
           promedioFinal = materiasConNota > 0 ? Math.round(sumaNotas / materiasConNota) : "";
         }
 
-        fila += `"${promedioFinal}"\n`;
-        csvContent += fila;
+        // Empujar el promedio al final de la fila
+        fila.push(promedioFinal);
+        excelData.push(fila);
       });
 
-    // 5. Determinar el nombre del archivo dinámicamente
+    // 5. Determinar el nombre del archivo dinámicamente (.xlsx en lugar de .csv)
     const objGrado = NIVELES.flatMap((n) => n.grados).find((g) => g.id === grado);
     const nombreGrado = objGrado ? objGrado.nombre : "Grado";
-    const objSeccion = objGrado?.secciones.find(s => s.id === seccion);
+    const objSeccion = objGrado?.secciones.find((s) => s.id === seccion);
     const nombreSeccion = objSeccion ? (objSeccion.label === "Única" ? "Unica" : objSeccion.label) : "A";
 
-    const nombreArchivo = `${nombreGrado}_Seccion_${nombreSeccion}_Unidad${unidadExportar}.csv`.replace(/ /g, "_");
+    const nombreArchivo = `${nombreGrado}_Seccion_${nombreSeccion}_Unidad${unidadExportar}.xlsx`.replace(/ /g, "_");
 
-    // 6. Crear archivo y forzar descarga
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.setAttribute("download", nombreArchivo);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    // 6. CREAR EL ARCHIVO EXCEL XLSX REAL Y DESCARGAR
+    const worksheet = XLSX.utils.aoa_to_sheet(excelData);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Sábana de Notas");
+
+    // Guardar y disparar la descarga
+    XLSX.writeFile(workbook, nombreArchivo);
   };
 
   const NIVELES = [
