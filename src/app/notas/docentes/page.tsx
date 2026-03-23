@@ -11,7 +11,7 @@ import {
   obtenerGradosList,
   obtenerMateriasList,
   asignarMaestroTitularAction, 
-  obtenerMaestroTitular, // 👈 Importación agregada
+  obtenerMaestroTitular, 
 } from "../../actions";
 
 const MATERIAS_POR_GRADO: Record<string, number[]> = {
@@ -47,27 +47,30 @@ const MATERIAS_POR_GRADO: Record<string, number[]> = {
     119, 120, 121, 122, 123, 124, 125, 126, 127, 128, 129, 130, 131, 132, 133,
   ],
 
+  // 💡 BÁSICO CON DANZA (ID 300) AGREGADA
   "14": [
-    218, 248, 210, 201, 246, 200, 243, 227, 249, 250, 220, 244, 245, 233, 251,
+    218, 248, 210, 201, 246, 200, 243, 227, 249, 300, 250, 220, 244, 245, 247, 251, 233,
     252, 253, 254, 255, 256, 257, 258, 259, 260, 261,
   ],
   "15": [
-    218, 248, 210, 201, 246, 200, 243, 227, 249, 250, 220, 244, 245, 233, 251,
+    218, 248, 210, 201, 246, 200, 243, 227, 249, 300, 250, 220, 244, 245, 247, 251, 233,
     252, 253, 254, 255, 256, 257, 258, 259, 260, 261,
   ],
   "16": [
-    218, 248, 210, 201, 246, 200, 243, 227, 249, 250, 220, 244, 245, 233, 251,
+    218, 248, 210, 201, 246, 200, 243, 227, 249, 300, 250, 220, 244, 245, 247, 251, 233,
     252, 253, 254, 255, 256, 257, 258, 259, 260, 261,
   ],
 
+  // 💡 BACHILLERATO CON QUÍMICA (217) Y FÍSICA (266) EN AMBOS GRADOS
   "17": [
-    262, 263, 264, 265, 266, 267, 228, 245, 205, 234, 203, 242, 247, 251, 233,
+    262, 263, 264, 265, 266, 217, 267, 228, 245, 205, 234, 203, 242, 247, 251, 233,
     252, 253, 254, 255, 256, 257, 258, 259, 260, 261,
   ],
   "18": [
-    268, 269, 270, 271, 272, 219, 217, 273, 229, 207, 242, 247, 251, 233, 252,
+    268, 269, 270, 271, 272, 219, 217, 266, 273, 229, 207, 242, 247, 251, 233, 252,
     253, 254, 255, 256, 257, 258, 259, 260, 261,
   ],
+  
   "19": [
     202, 237, 211, 274, 275, 222, 276, 277, 278, 279, 238, 266, 280, 251, 233,
     252, 253, 254, 255, 256, 257, 258, 259, 260, 261,
@@ -109,20 +112,16 @@ export default function GestorDocentesPage() {
   const [formSeccion, setFormSeccion] = useState("1");
   const [formMateria, setFormMateria] = useState("999");
 
-  // 💡 ESTADOS PARA EL NUEVO MODAL DE TITULAR
   const [modalTitularAbierto, setModalTitularAbierto] = useState(false);
   const [titularGrado, setTitularGrado] = useState("");
   const [titularSeccion, setTitularSeccion] = useState("1");
   const [titularDocente, setTitularDocente] = useState("");
-  
-  // 💡 NUEVO ESTADO PARA BUSCAR AL TITULAR ACTUAL
   const [titularActual, setTitularActual] = useState("-");
 
   useEffect(() => {
     cargarDatosIniciales();
   }, []);
 
-  // 💡 NUEVO EFECTO: Busca al titular actual cuando cambian el grado o sección en el modal
   useEffect(() => {
     if (modalTitularAbierto && titularGrado && titularSeccion) {
       setTitularActual("Buscando...");
@@ -246,10 +245,21 @@ export default function GestorDocentesPage() {
     return sec;
   };
 
+  // 💡 LÓGICA BLINDADA PARA FILTRAR MATERIAS
   const idsPermitidos = formGrado ? MATERIAS_POR_GRADO[formGrado] || [] : [];
+  
   const materiasA_Mostrar = materias
-    .filter((m) => idsPermitidos.includes(m.id_materia))
-    .sort((a, b) => a.nombre_materia.localeCompare(b.nombre_materia));
+    .filter((m) => {
+      // Forzamos el ID a número (por si MySQL lo manda como "250")
+      const idReal = Number(m.id_materia || m.ID_MATERIA);
+      return idsPermitidos.includes(idReal);
+    })
+    .map((m) => ({
+      id_materia: Number(m.id_materia || m.ID_MATERIA),
+      // Atrapamos el nombre sin importar cómo se llame la columna en BD
+      nombre_real: String(m.materia || m.nombre_materia || m.NOMBRE_MATERIA || "Sin nombre")
+    }))
+    .sort((a, b) => a.nombre_real.localeCompare(b.nombre_real));
 
   return (
     <div className="min-h-screen bg-slate-50 p-6 md:p-10 font-sans">
@@ -366,7 +376,6 @@ export default function GestorDocentesPage() {
                   onSubmit={handleAgregarAsignacion}
                   className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end"
                 >
-                  {/* SELECTOR DE GRADO */}
                   <div className="md:col-span-1">
                     <label className="block text-[10px] font-black text-gray-400 uppercase ml-1 mb-2">
                       Grado
@@ -379,7 +388,7 @@ export default function GestorDocentesPage() {
                         setFormGrado(nuevoGrado);
 
                         if (GRADOS_SECCION_UNICA.includes(nuevoGrado)) {
-                          setFormSeccion("1"); // Fuerza a Única
+                          setFormSeccion("1"); 
                         } else if (nuevoGrado !== "16" && formSeccion === "3") {
                           setFormSeccion("1"); 
                         }
@@ -410,7 +419,6 @@ export default function GestorDocentesPage() {
                     </select>
                   </div>
 
-                  {/* SELECTOR DE SECCIÓN INTELIGENTE */}
                   <div className="md:col-span-1">
                     <label className="block text-[10px] font-black text-gray-400 uppercase ml-1 mb-2">
                       Sección
@@ -451,7 +459,7 @@ export default function GestorDocentesPage() {
                           </option>
                           {materiasA_Mostrar.map((m) => (
                             <option key={m.id_materia} value={m.id_materia}>
-                              {m.nombre_materia}
+                              {m.nombre_real}
                             </option>
                           ))}
                         </>
@@ -590,7 +598,6 @@ export default function GestorDocentesPage() {
                 </select>
               </div>
 
-              {/* 💡 CAJITA INFORMATIVA DEL TITULAR ACTUAL */}
               {titularGrado && (
                 <div className="bg-blue-50 border border-blue-100 p-4 rounded-xl flex items-center justify-between">
                   <span className="text-[10px] font-black text-blue-500 uppercase tracking-widest">Titular Actual:</span>
