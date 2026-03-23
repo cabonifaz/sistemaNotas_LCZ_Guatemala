@@ -8,6 +8,7 @@ import { BoletaKinder } from "./BoletaKinder";
 import { BoletaPreparatoria } from "./BoletaPreparatoria";
 import { BoletaGeneral } from "./BoletaGeneral";
 import { BoletaPrimeroPrimaria } from "./BoletaPrimeroPrimaria";
+import * as XLSX from "xlsx";
 
 import {
   obtenerMatrizNotas,
@@ -33,6 +34,10 @@ export default function CalificacionesPage() {
   const [unidadesHabilitadas, setUnidadesHabilitadas] = useState<number[]>([1]);
 
   const [alumnosGuardando, setAlumnosGuardando] = useState<number[]>([]);
+  
+  // 💡 NUEVO ESTADO: Para rastrear quién tiene notas modificadas pero sin guardar
+  const [cambiosSinGuardar, setCambiosSinGuardar] = useState<number[]>([]);
+  
   const estudiantesRef = useRef(estudiantesAgrupados);
 
   const [imprimiendoMasivo, setImprimiendoMasivo] = useState(false);
@@ -50,6 +55,12 @@ export default function CalificacionesPage() {
   });
 
   const handleImpresionMasiva = (unidad: number) => {
+    // 💡 BLOQUEO DE IMPRESIÓN MASIVA
+    if (cambiosSinGuardar.length > 0) {
+      alert("⚠️ ¡Espera! Tienes alumnos con notas modificadas sin guardar. Por favor, dale al botón 'Guardar Notas' de esos alumnos antes de imprimir.");
+      return;
+    }
+
     setUnidadAImprimir(unidad);
     setImprimiendoMasivo(true);
     setAlumnoParaImprimir(null);
@@ -59,21 +70,17 @@ export default function CalificacionesPage() {
     }, 800);
   };
 
-  // 💡 FUNCIÓN EXCEL MEJORADA (Comas internas arregladas y nombres de archivos dinámicos)
-// 💡 FUNCIÓN EXCEL DEFINITIVA (Mayúsculas, Título de Bimestre y "Promedio" de Letras para Pre-Primaria)
   const descargarCuadroNotas = () => {
     if (estudiantesAgrupados.length === 0) return alert("No hay alumnos para exportar.");
 
-    // Encontrar qué unidad está habilitada.
     const unidadExportar = unidadesHabilitadas.length > 0 ? Math.max(...unidadesHabilitadas) : 1;
     const campoUnidad = `u${unidadExportar}`;
 
-    // 1. Extraer todas las materias únicas de los estudiantes para formar las columnas
     const materiasSet = new Map();
     estudiantesAgrupados.forEach((est) => {
       const extraerMaterias = (lista: any[]) => {
         if (!lista) return;
-        lista.forEach(m => {
+        lista.forEach((m) => {
           if (!materiasSet.has(m.id_materia)) {
             materiasSet.set(m.id_materia, m.materia);
           }
@@ -91,37 +98,31 @@ export default function CalificacionesPage() {
     const materiasNombres = Array.from(materiasSet.values());
     const materiasIds = Array.from(materiasSet.keys());
 
-    // 2. Preparar el archivo
-    let csvContent = "\uFEFF";
-    
-    // 💡 AGREGAMOS EL TÍTULO DEL BIMESTRE ADENTRO DEL EXCEL
-    csvContent += `"CUADRO DE NOTAS - UNIDAD ${unidadExportar}"\n\n`;
+    const excelData: any[][] = [];
 
-    const cabeceras = ["Nombre del Alumno", ...materiasNombres.map(m => `"${m}"`), "Promedio General"];
-    csvContent += cabeceras.join(",") + "\n";
+    excelData.push([`CUADRO DE NOTAS - UNIDAD ${unidadExportar}`]);
+    excelData.push([]);
 
-    // 3. Recorrer cada estudiante y generar su fila
+    const cabeceras = ["Nombre del Alumno", ...materiasNombres, "Promedio General"];
+    excelData.push(cabeceras);
+
     estudiantesAgrupados
-      .sort((a, b) => a.nombre.localeCompare(b.nombre)) // Orden alfabético
+      .sort((a, b) => a.nombre.localeCompare(b.nombre)) 
       .forEach((est) => {
-        // 💡 FORZAMOS A MAYÚSCULAS PARA CORREGIR NOMBRES COMO "PeñA"
-        let fila = `"${est.nombre.toUpperCase()}",`; 
-        
-        // Variables para promedios numéricos
+        const fila: any[] = [est.nombre.toUpperCase()];
+
         let sumaNotas = 0;
         let materiasConNota = 0;
-        
-        // Variables para la "Moda" (Letra que más se repite en Pre-Primaria)
         let notasTexto: string[] = [];
 
-        materiasIds.forEach(idMateria => {
+        materiasIds.forEach((idMateria) => {
           let notaEncontrada: any = "";
           let esNumerica = false;
           let encontrada = false;
 
           const buscarEn = (lista: any[]) => {
             if (!lista || encontrada) return;
-            const m = lista.find(item => item.id_materia === idMateria);
+            const m = lista.find((item) => item.id_materia === idMateria);
             if (m) {
               notaEncontrada = m[campoUnidad];
               if (m.tipo === "Numerica") esNumerica = true;
@@ -138,71 +139,63 @@ export default function CalificacionesPage() {
             });
           }
 
-          // Procesar la nota encontrada
           if (notaEncontrada !== "" && notaEncontrada !== undefined) {
             if (esNumerica && !isNaN(parseFloat(notaEncontrada))) {
-              // Es un número, lo sumamos al promedio
               const num = parseFloat(notaEncontrada);
               if (num > 0) {
                 sumaNotas += num;
                 materiasConNota++;
               }
+              fila.push(num); 
             } else if (!esNumerica) {
-              // Es una letra (A, F, NM, DESTACA, etc), la guardamos en la lista
               notasTexto.push(notaEncontrada);
+              fila.push(notaEncontrada); 
+            } else {
+              fila.push(notaEncontrada);
             }
+          } else {
+            fila.push(""); 
           }
-
-          // Agregar la nota a la fila
-          fila += `"${notaEncontrada || ""}",`;
         });
 
-        // 4. CALCULAR EL PROMEDIO O LA LETRA QUE MÁS SE REPITE
-        let promedioFinal: string | number = "";
+        let promedioFinal: any = "";
         const esPrePrimaria = ["11", "12", "13", "4", "5", "1"].includes(est.id_grado.toString());
 
         if (esPrePrimaria) {
-          // Lógica para descubrir la letra que más sacó (La Moda)
           if (notasTexto.length > 0) {
             const conteoLetras: any = {};
             let maxRepeticiones = 0;
             let letraGanadora = "";
 
-            notasTexto.forEach(letra => {
+            notasTexto.forEach((letra) => {
               conteoLetras[letra] = (conteoLetras[letra] || 0) + 1;
               if (conteoLetras[letra] > maxRepeticiones) {
                 maxRepeticiones = conteoLetras[letra];
                 letraGanadora = letra;
               }
             });
-            promedioFinal = letraGanadora; // Ej. "A" o "DESTACA"
+            promedioFinal = letraGanadora;
           }
         } else {
-          // Lógica tradicional para promedios numéricos
           promedioFinal = materiasConNota > 0 ? Math.round(sumaNotas / materiasConNota) : "";
         }
 
-        fila += `"${promedioFinal}"\n`;
-        csvContent += fila;
+        fila.push(promedioFinal);
+        excelData.push(fila);
       });
 
-    // 5. Determinar el nombre del archivo dinámicamente
     const objGrado = NIVELES.flatMap((n) => n.grados).find((g) => g.id === grado);
     const nombreGrado = objGrado ? objGrado.nombre : "Grado";
-    const objSeccion = objGrado?.secciones.find(s => s.id === seccion);
+    const objSeccion = objGrado?.secciones.find((s) => s.id === seccion);
     const nombreSeccion = objSeccion ? (objSeccion.label === "Única" ? "Unica" : objSeccion.label) : "A";
 
-    const nombreArchivo = `${nombreGrado}_Seccion_${nombreSeccion}_Unidad${unidadExportar}.csv`.replace(/ /g, "_");
+    const nombreArchivo = `${nombreGrado}_Seccion_${nombreSeccion}_Unidad${unidadExportar}.xlsx`.replace(/ /g, "_");
 
-    // 6. Crear archivo y forzar descarga
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.setAttribute("download", nombreArchivo);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    const worksheet = XLSX.utils.aoa_to_sheet(excelData);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Sábana de Notas");
+
+    XLSX.writeFile(workbook, nombreArchivo);
   };
 
   const NIVELES = [
@@ -1361,6 +1354,15 @@ const materiasPrimariaAlta = [
         u4: "",
       },
       {
+        id_materia: 250,
+        materia: "Productividad y Desarrollo",
+        tipo: "Numerica",
+        u1: "",
+        u2: "",
+        u3: "",
+        u4: "",
+      },
+      {
         id_materia: 220,
         materia: "Emprendimiento para la Productividad",
         tipo: "Numerica",
@@ -1582,6 +1584,15 @@ const materiasPrimariaAlta = [
         u4: "",
       },
       {
+        id_materia: 217,
+        materia: "Química",
+        tipo: "Numerica",
+        u1: "",
+        u2: "",
+        u3: "",
+        u4: "",
+      },
+      {
         id_materia: 267,
         materia: "Ciencias Sociales y Formación Ciudadana 4",
         tipo: "Numerica",
@@ -1703,6 +1714,15 @@ const materiasPrimariaAlta = [
       {
         id_materia: 217,
         materia: "Química",
+        tipo: "Numerica",
+        u1: "",
+        u2: "",
+        u3: "",
+        u4: "",
+      },
+      {
+        id_materia: 266,
+        materia: "Física",
         tipo: "Numerica",
         u1: "",
         u2: "",
@@ -2117,7 +2137,6 @@ const materiasPrimariaAlta = [
     ],
   };
 
-  // 💡 MANTENEMOS EL ORDEN INVERTIDO PARA QUE SALGA HÁBITOS AL FINAL EN LA WEB Y EN LA BOLETA GENERAL
   const areasPrimaria = [
     { id: 1, titulo: "1. Áreas Académicas" },
     { id: 2, titulo: "2. Programas Educativos Extracurriculares" },
@@ -2251,6 +2270,7 @@ const materiasPrimariaAlta = [
       return alert("⛔ No tienes permiso para esta sección.");
 
     setCargando(true);
+    setCambiosSinGuardar([]); // 💡 Limpiamos los rastros anteriores al cargar nuevos alumnos
     let idGFinal = Number(grado);
     let idSFinal = Number(seccion);
 
@@ -2298,7 +2318,7 @@ const materiasPrimariaAlta = [
               cur = curricularesPreparatoriaBase.map((m) => ({ ...m }));
               asp = aspectosPreparatoriaBase.map((m) => ({ ...m }));
             } else if (esPrimaria) {
-              const esPrimariaAlta = [8, 9, 10].includes(idGFinal); // 8=4to, 9=5to, 10=6to
+              const esPrimariaAlta = [8, 9, 10].includes(idGFinal); 
               blqs = {
                 1: esPrimariaAlta ? materiasPrimariaAlta.map((m) => ({ ...m })) : bloquesPrimariaBase[1].map((m) => ({ ...m })),
                 2: bloquesPrimariaBase[2].map((m) => ({ ...m })),
@@ -2400,6 +2420,11 @@ const materiasPrimariaAlta = [
   };
 
   const handleNotaChange = (idA: number, idM: number, u: string, v: string) => {
+    // 💡 MARCAMOS QUE ESTE ALUMNO TIENE CAMBIOS SIN GUARDAR
+    if (!cambiosSinGuardar.includes(idA)) {
+      setCambiosSinGuardar((prev) => [...prev, idA]);
+    }
+
     setEstudiantesAgrupados((prev) =>
       prev.map((est) => {
         if (est.id_alumno === idA) {
@@ -2507,6 +2532,10 @@ const materiasPrimariaAlta = [
       });
 
       await guardarCalificacionesMasivas(datosAEnviar);
+      
+      // 💡 GUARDADO EXITOSO: Le quitamos la alerta de que tiene cambios
+      setCambiosSinGuardar((prev) => prev.filter((id) => id !== idAlumno));
+
     } catch (error) {
       console.error("Error guardando alumno", error);
     } finally {
@@ -2635,7 +2664,6 @@ const materiasPrimariaAlta = [
         />
       );
 
-    // 💡 1ro Primaria usa su propia boleta
     if (grado === "6")
       return (
         <BoletaPrimeroPrimaria
@@ -2646,7 +2674,6 @@ const materiasPrimariaAlta = [
         />
       );
 
-    // 💡 Los demás usan la General
     if (
       [
         "7",
@@ -2780,7 +2807,6 @@ const materiasPrimariaAlta = [
                   permisos?.rol === "Super usuario") && (
                   <div className="flex gap-1 md:gap-2 mr-2 border-r border-gray-200 pr-2 md:pr-4 items-center">
                     
-                    {/* 💡 BOTÓN EXCEL (Visible solo para Súper Admin o Admin) */}
                     <button
                       onClick={descargarCuadroNotas}
                       className="mr-4 flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg font-black text-[10px] uppercase shadow-sm hover:bg-green-700 transition-all active:scale-95"
@@ -2827,6 +2853,10 @@ const materiasPrimariaAlta = [
           const estaGuardandoEsteAlumno = alumnosGuardando.includes(
             est.id_alumno,
           );
+          
+          // 💡 VARIABLE PARA SABER SI ESTE ALUMNO TIENE CAMBIOS SIN GUARDAR
+          const tieneCambiosSinGuardar = cambiosSinGuardar.includes(est.id_alumno);
+          
           const esPreVisual = ["11", "12", "13", "4", "5", "1"].includes(
             est.id_grado.toString(),
           );
@@ -2834,7 +2864,7 @@ const materiasPrimariaAlta = [
           return (
             <div
               key={index}
-              className="bg-white rounded-[2rem] shadow-sm border border-gray-100 overflow-hidden mb-4"
+              className={`bg-white rounded-[2rem] shadow-sm border transition-all overflow-hidden mb-4 ${tieneCambiosSinGuardar ? "border-yellow-300 ring-2 ring-yellow-100" : "border-gray-100"}`}
             >
               <div
                 onClick={() => toggleAlumno(est.id_alumno)}
@@ -2854,8 +2884,13 @@ const materiasPrimariaAlta = [
                       Guardando...
                     </span>
                   )}
+                  {tieneCambiosSinGuardar && !estaGuardandoEsteAlumno && (
+                    <span className="text-[10px] font-black text-yellow-600 uppercase tracking-widest bg-yellow-50 px-3 py-1 rounded-lg border border-yellow-200 shadow-sm animate-pulse hidden md:inline-block">
+                      Cambios sin guardar
+                    </span>
+                  )}
                   <div
-                    className={`w-8 h-8 rounded-full bg-gray-50 shadow-sm flex items-center justify-center text-gray-500 transition-transform duration-300 ${estaAbierto ? "rotate-180" : ""}`}
+                    className={`w-8 h-8 rounded-full shadow-sm flex items-center justify-center transition-transform duration-300 ${estaAbierto ? "rotate-180" : ""} ${tieneCambiosSinGuardar ? "bg-yellow-100 text-yellow-600" : "bg-gray-50 text-gray-500"}`}
                   >
                     <span className="font-black text-xs">▼</span>
                   </div>
@@ -2867,13 +2902,16 @@ const materiasPrimariaAlta = [
                   
                   <div className="flex justify-between items-center mb-4 flex-wrap gap-4">
                     
+                    {/* 💡 BOTÓN DE GUARDADO DINÁMICO */}
                     <button
                       onClick={() => guardarNotasAlumno(est.id_alumno)}
                       disabled={estaGuardandoEsteAlumno}
                       className={`px-6 py-3 rounded-xl font-black text-[10px] uppercase tracking-widest shadow-sm flex items-center gap-2 transition-all ${
                         estaGuardandoEsteAlumno
                           ? "bg-gray-100 text-gray-400 cursor-not-allowed"
-                          : "bg-[#17365D] text-white hover:bg-slate-800 hover:scale-105 active:scale-95"
+                          : tieneCambiosSinGuardar 
+                            ? "bg-yellow-500 text-yellow-900 border-2 border-yellow-600 animate-pulse hover:bg-yellow-400 active:scale-95" 
+                            : "bg-[#17365D] text-white hover:bg-slate-800 hover:scale-105 active:scale-95"
                       }`}
                     >
                       {estaGuardandoEsteAlumno ? (
@@ -2883,7 +2921,7 @@ const materiasPrimariaAlta = [
                         </>
                       ) : (
                         <>
-                          <span>💾</span> Guardar Notas
+                          <span>💾</span> {tieneCambiosSinGuardar ? "¡Guarda tus Cambios!" : "Guardar Notas"}
                         </>
                       )}
                     </button>
@@ -2897,6 +2935,12 @@ const materiasPrimariaAlta = [
                             <button
                               key={unidad}
                               onClick={() => {
+                                // 💡 BLOQUEO DE IMPRESIÓN INDIVIDUAL
+                                if (tieneCambiosSinGuardar) {
+                                  alert("⚠️ Tienes notas sin guardar. Por favor, dale al botón de 'Guardar Cambios' de este alumno antes de imprimir su boleta.");
+                                  return;
+                                }
+
                                 setUnidadAImprimir(unidad);
                                 setAlumnoParaImprimir(est);
                                 setTimeout(() => handlePrint(), 300);
