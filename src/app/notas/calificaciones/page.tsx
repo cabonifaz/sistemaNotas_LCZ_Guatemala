@@ -34,10 +34,7 @@ export default function CalificacionesPage() {
   const [unidadesHabilitadas, setUnidadesHabilitadas] = useState<number[]>([1]);
 
   const [alumnosGuardando, setAlumnosGuardando] = useState<number[]>([]);
-  
-  // 💡 NUEVO ESTADO: Para rastrear quién tiene notas modificadas pero sin guardar
   const [cambiosSinGuardar, setCambiosSinGuardar] = useState<number[]>([]);
-  
   const estudiantesRef = useRef(estudiantesAgrupados);
 
   const [imprimiendoMasivo, setImprimiendoMasivo] = useState(false);
@@ -55,9 +52,8 @@ export default function CalificacionesPage() {
   });
 
   const handleImpresionMasiva = (unidad: number) => {
-    // 💡 BLOQUEO DE IMPRESIÓN MASIVA
     if (cambiosSinGuardar.length > 0) {
-      alert("⚠️ ¡Espera! Tienes alumnos con notas modificadas sin guardar. Por favor, dale al botón 'Guardar Notas' de esos alumnos antes de imprimir.");
+      alert("⚠️ ¡Espera! Tienes alumnos con notas modificadas sin guardar. Por favor, asegúrate de guardar esos cambios antes de imprimir.");
       return;
     }
 
@@ -107,7 +103,6 @@ export default function CalificacionesPage() {
     excelData.push(cabeceras);
 
     estudiantesAgrupados
-      .sort((a, b) => a.nombre.localeCompare(b.nombre)) 
       .forEach((est) => {
         const fila: any[] = [est.nombre.toUpperCase()];
 
@@ -2270,7 +2265,8 @@ const materiasPrimariaAlta = [
       return alert("⛔ No tienes permiso para esta sección.");
 
     setCargando(true);
-    setCambiosSinGuardar([]); // 💡 Limpiamos los rastros anteriores al cargar nuevos alumnos
+    setCambiosSinGuardar([]); 
+    setExpandidos([]);
     let idGFinal = Number(grado);
     let idSFinal = Number(seccion);
 
@@ -2409,7 +2405,12 @@ const materiasPrimariaAlta = [
           }
           return acc;
         }, {});
-        setEstudiantesAgrupados(Object.values(agrupados));
+        
+        // 💡 ORDEN ALFABÉTICO OBLIGATORIO
+        const listaOrdenada = Object.values(agrupados) as any[];
+        listaOrdenada.sort((a, b) => a.nombre.localeCompare(b.nombre));
+
+        setEstudiantesAgrupados(listaOrdenada);
       } else {
         setEstudiantesAgrupados([]);
         alert("ℹ️ No hay alumnos registrados en este nivel.");
@@ -2420,7 +2421,7 @@ const materiasPrimariaAlta = [
   };
 
   const handleNotaChange = (idA: number, idM: number, u: string, v: string) => {
-    // 💡 MARCAMOS QUE ESTE ALUMNO TIENE CAMBIOS SIN GUARDAR
+    // 💡 REGISTRAMOS QUE EL ALUMNO FUE EDITADO
     if (!cambiosSinGuardar.includes(idA)) {
       setCambiosSinGuardar((prev) => [...prev, idA]);
     }
@@ -2445,6 +2446,8 @@ const materiasPrimariaAlta = [
   };
 
   const guardarNotasAlumno = async (idAlumno: number) => {
+    if (alumnosGuardando.includes(idAlumno)) return; // Evita el doble guardado
+
     const estudiante = estudiantesRef.current.find(
       (e) => e.id_alumno === idAlumno,
     );
@@ -2469,34 +2472,10 @@ const materiasPrimariaAlta = [
 
       if (esPerito) {
         promedios = {
-          u1: Number(
-            calcularPromedioCombinado(
-              estudiante.bloques[1] || [],
-              estudiante.bloques[2] || [],
-              "u1",
-            ),
-          ),
-          u2: Number(
-            calcularPromedioCombinado(
-              estudiante.bloques[1] || [],
-              estudiante.bloques[2] || [],
-              "u2",
-            ),
-          ),
-          u3: Number(
-            calcularPromedioCombinado(
-              estudiante.bloques[1] || [],
-              estudiante.bloques[2] || [],
-              "u3",
-            ),
-          ),
-          u4: Number(
-            calcularPromedioCombinado(
-              estudiante.bloques[1] || [],
-              estudiante.bloques[2] || [],
-              "u4",
-            ),
-          ),
+          u1: Number(calcularPromedioCombinado(estudiante.bloques[1] || [], estudiante.bloques[2] || [], "u1")),
+          u2: Number(calcularPromedioCombinado(estudiante.bloques[1] || [], estudiante.bloques[2] || [], "u2")),
+          u3: Number(calcularPromedioCombinado(estudiante.bloques[1] || [], estudiante.bloques[2] || [], "u3")),
+          u4: Number(calcularPromedioCombinado(estudiante.bloques[1] || [], estudiante.bloques[2] || [], "u4")),
         };
       } else {
         const academicas = estudiante.bloques[1] || [];
@@ -2533,7 +2512,7 @@ const materiasPrimariaAlta = [
 
       await guardarCalificacionesMasivas(datosAEnviar);
       
-      // 💡 GUARDADO EXITOSO: Le quitamos la alerta de que tiene cambios
+      // 💡 GUARDADO EXITOSO: Le quitamos la alerta
       setCambiosSinGuardar((prev) => prev.filter((id) => id !== idAlumno));
 
     } catch (error) {
@@ -2544,10 +2523,16 @@ const materiasPrimariaAlta = [
   };
 
   const toggleAlumno = (idAlumno: number) => {
+    // 💡 AUTOGUARDADO AL CAMBIAR DE ALUMNO
+    cambiosSinGuardar.forEach((idPendiente) => {
+      guardarNotasAlumno(idPendiente);
+    });
+
+    // 💡 ACORDEÓN INTELIGENTE: Solo permite 1 alumno abierto a la vez
     if (expandidos.includes(idAlumno)) {
-      setExpandidos((prev) => prev.filter((i) => i !== idAlumno));
+      setExpandidos([]); // Si estaba abierto, lo cierra
     } else {
-      setExpandidos((prev) => [...prev, idAlumno]);
+      setExpandidos([idAlumno]); // Cierra los demás y abre el seleccionado
     }
   };
 
@@ -2854,7 +2839,6 @@ const materiasPrimariaAlta = [
             est.id_alumno,
           );
           
-          // 💡 VARIABLE PARA SABER SI ESTE ALUMNO TIENE CAMBIOS SIN GUARDAR
           const tieneCambiosSinGuardar = cambiosSinGuardar.includes(est.id_alumno);
           
           const esPreVisual = ["11", "12", "13", "4", "5", "1"].includes(
@@ -2902,7 +2886,6 @@ const materiasPrimariaAlta = [
                   
                   <div className="flex justify-between items-center mb-4 flex-wrap gap-4">
                     
-                    {/* 💡 BOTÓN DE GUARDADO DINÁMICO */}
                     <button
                       onClick={() => guardarNotasAlumno(est.id_alumno)}
                       disabled={estaGuardandoEsteAlumno}
@@ -2935,7 +2918,6 @@ const materiasPrimariaAlta = [
                             <button
                               key={unidad}
                               onClick={() => {
-                                // 💡 BLOQUEO DE IMPRESIÓN INDIVIDUAL
                                 if (tieneCambiosSinGuardar) {
                                   alert("⚠️ Tienes notas sin guardar. Por favor, dale al botón de 'Guardar Cambios' de este alumno antes de imprimir su boleta.");
                                   return;
