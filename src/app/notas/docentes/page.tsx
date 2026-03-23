@@ -47,7 +47,7 @@ const MATERIAS_POR_GRADO: Record<string, number[]> = {
     119, 120, 121, 122, 123, 124, 125, 126, 127, 128, 129, 130, 131, 132, 133,
   ],
 
-  // 💡 BÁSICO CON DANZA (ID 300) AGREGADA
+// BÁSICO (1ro, 2do, 3ro)
   "14": [
     218, 248, 210, 201, 246, 200, 243, 227, 249, 300, 250, 220, 244, 245, 247, 251, 233,
     252, 253, 254, 255, 256, 257, 258, 259, 260, 261,
@@ -457,6 +457,7 @@ export default function GestorDocentesPage() {
                           >
                             TUTOR/A DE AULA (Menos Prioridad)
                           </option>
+                          {/* 💡 AQUI RENDERIZAMOS CON EL NOMBRE REAL */}
                           {materiasA_Mostrar.map((m) => (
                             <option key={m.id_materia} value={m.id_materia}>
                               {m.nombre_real}

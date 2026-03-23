@@ -1344,8 +1344,8 @@ const materiasPrimariaAlta = [
         u3: "",
         u4: "",
       },
-      {
-        id_materia: 300,
+     {
+        id_materia: 300,  // <-- CAMBIADO A 300
         materia: "Danza",
         tipo: "Numerica",
         u1: "",
