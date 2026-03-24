@@ -34,9 +34,10 @@ export default function CalificacionesPage() {
   const [unidadesHabilitadas, setUnidadesHabilitadas] = useState<number[]>([1]);
 
   const [alumnosGuardando, setAlumnosGuardando] = useState<number[]>([]);
-  
-  // 💡 NUEVO ESTADO: Para rastrear quién tiene notas modificadas pero sin guardar
   const [cambiosSinGuardar, setCambiosSinGuardar] = useState<number[]>([]);
+  
+  // 💡 NUEVO ESTADO PARA EL GUARDADO MASIVO
+  const [guardandoTodo, setGuardandoTodo] = useState(false);
   
   const estudiantesRef = useRef(estudiantesAgrupados);
 
@@ -55,9 +56,8 @@ export default function CalificacionesPage() {
   });
 
   const handleImpresionMasiva = (unidad: number) => {
-    // 💡 BLOQUEO DE IMPRESIÓN MASIVA
     if (cambiosSinGuardar.length > 0) {
-      alert("⚠️ ¡Espera! Tienes alumnos con notas modificadas sin guardar. Por favor, dale al botón 'Guardar Notas' de esos alumnos antes de imprimir.");
+      alert("⚠️ ¡Espera! Tienes alumnos con notas modificadas sin guardar. Por favor, asegúrate de guardar esos cambios (puedes usar el botón 'Guardar Todas las Notas') antes de imprimir.");
       return;
     }
 
@@ -106,83 +106,82 @@ export default function CalificacionesPage() {
     const cabeceras = ["Nombre del Alumno", ...materiasNombres, "Promedio General"];
     excelData.push(cabeceras);
 
-    estudiantesAgrupados
-      .sort((a, b) => a.nombre.localeCompare(b.nombre)) 
-      .forEach((est) => {
-        const fila: any[] = [est.nombre.toUpperCase()];
+    // 💡 NOTA: Se respeta el orden estricto por Apellidos (que ya viene ordenado de handleCargarAlumnos)
+    estudiantesAgrupados.forEach((est) => {
+      const fila: any[] = [est.nombre.toUpperCase()];
 
-        let sumaNotas = 0;
-        let materiasConNota = 0;
-        let notasTexto: string[] = [];
+      let sumaNotas = 0;
+      let materiasConNota = 0;
+      let notasTexto: string[] = [];
 
-        materiasIds.forEach((idMateria) => {
-          let notaEncontrada: any = "";
-          let esNumerica = false;
-          let encontrada = false;
+      materiasIds.forEach((idMateria) => {
+        let notaEncontrada: any = "";
+        let esNumerica = false;
+        let encontrada = false;
 
-          const buscarEn = (lista: any[]) => {
-            if (!lista || encontrada) return;
-            const m = lista.find((item) => item.id_materia === idMateria);
-            if (m) {
-              notaEncontrada = m[campoUnidad];
-              if (m.tipo === "Numerica") esNumerica = true;
-              encontrada = true;
-            }
-          };
-
-          if (["11", "12", "13", "4", "5", "1"].includes(est.id_grado.toString())) {
-            buscarEn(est.curriculares);
-            buscarEn(est.aspectos);
-          } else {
-            Object.values(est.bloques).forEach((bloque: any) => {
-              buscarEn(bloque);
-            });
+        const buscarEn = (lista: any[]) => {
+          if (!lista || encontrada) return;
+          const m = lista.find((item) => item.id_materia === idMateria);
+          if (m) {
+            notaEncontrada = m[campoUnidad];
+            if (m.tipo === "Numerica") esNumerica = true;
+            encontrada = true;
           }
+        };
 
-          if (notaEncontrada !== "" && notaEncontrada !== undefined) {
-            if (esNumerica && !isNaN(parseFloat(notaEncontrada))) {
-              const num = parseFloat(notaEncontrada);
-              if (num > 0) {
-                sumaNotas += num;
-                materiasConNota++;
-              }
-              fila.push(num); 
-            } else if (!esNumerica) {
-              notasTexto.push(notaEncontrada);
-              fila.push(notaEncontrada); 
-            } else {
-              fila.push(notaEncontrada);
-            }
-          } else {
-            fila.push(""); 
-          }
-        });
-
-        let promedioFinal: any = "";
-        const esPrePrimaria = ["11", "12", "13", "4", "5", "1"].includes(est.id_grado.toString());
-
-        if (esPrePrimaria) {
-          if (notasTexto.length > 0) {
-            const conteoLetras: any = {};
-            let maxRepeticiones = 0;
-            let letraGanadora = "";
-
-            notasTexto.forEach((letra) => {
-              conteoLetras[letra] = (conteoLetras[letra] || 0) + 1;
-              if (conteoLetras[letra] > maxRepeticiones) {
-                maxRepeticiones = conteoLetras[letra];
-                letraGanadora = letra;
-              }
-            });
-            promedioFinal = letraGanadora;
-          }
+        if (["11", "12", "13", "4", "5", "1"].includes(est.id_grado.toString())) {
+          buscarEn(est.curriculares);
+          buscarEn(est.aspectos);
         } else {
-          promedioFinal = materiasConNota > 0 ? Math.round(sumaNotas / materiasConNota) : "";
+          Object.values(est.bloques).forEach((bloque: any) => {
+            buscarEn(bloque);
+          });
         }
 
-        fila.push(promedioFinal);
-        excelData.push(fila);
+        if (notaEncontrada !== "" && notaEncontrada !== undefined) {
+          if (esNumerica && !isNaN(parseFloat(notaEncontrada))) {
+            const num = parseFloat(notaEncontrada);
+            if (num > 0) {
+              sumaNotas += num;
+              materiasConNota++;
+            }
+            fila.push(num); 
+          } else if (!esNumerica) {
+            notasTexto.push(notaEncontrada);
+            fila.push(notaEncontrada); 
+          } else {
+            fila.push(notaEncontrada);
+          }
+        } else {
+          fila.push(""); 
+        }
       });
+
+      let promedioFinal: any = "";
+      const esPrePrimaria = ["11", "12", "13", "4", "5", "1"].includes(est.id_grado.toString());
+
+      if (esPrePrimaria) {
+        if (notasTexto.length > 0) {
+          const conteoLetras: any = {};
+          let maxRepeticiones = 0;
+          let letraGanadora = "";
+
+          notasTexto.forEach((letra) => {
+            conteoLetras[letra] = (conteoLetras[letra] || 0) + 1;
+            if (conteoLetras[letra] > maxRepeticiones) {
+              maxRepeticiones = conteoLetras[letra];
+              letraGanadora = letra;
+            }
+          });
+          promedioFinal = letraGanadora;
+        }
+      } else {
+        promedioFinal = materiasConNota > 0 ? Math.round(sumaNotas / materiasConNota) : "";
+      }
+
+      fila.push(promedioFinal);
+      excelData.push(fila);
+    });
 
     const objGrado = NIVELES.flatMap((n) => n.grados).find((g) => g.id === grado);
     const nombreGrado = objGrado ? objGrado.nombre : "Grado";
@@ -1344,8 +1343,8 @@ const materiasPrimariaAlta = [
         u3: "",
         u4: "",
       },
-     {
-        id_materia: 300,  // <-- CAMBIADO A 300
+      {
+        id_materia: 300,
         materia: "Danza",
         tipo: "Numerica",
         u1: "",
@@ -2270,7 +2269,8 @@ const materiasPrimariaAlta = [
       return alert("⛔ No tienes permiso para esta sección.");
 
     setCargando(true);
-    setCambiosSinGuardar([]); // 💡 Limpiamos los rastros anteriores al cargar nuevos alumnos
+    setCambiosSinGuardar([]); 
+    setExpandidos([]);
     let idGFinal = Number(grado);
     let idSFinal = Number(seccion);
 
@@ -2358,6 +2358,8 @@ const materiasPrimariaAlta = [
             acc[nombre] = {
               id_alumno: idAlumno,
               nombre,
+              nombres: nom,      // 💡 GUARDAMOS PARA ORDENAR
+              apellidos: ape,    // 💡 GUARDAMOS PARA ORDENAR
               maestro: nombreMaestraBD,
               curriculares: cur,
               aspectos: asp,
@@ -2409,7 +2411,24 @@ const materiasPrimariaAlta = [
           }
           return acc;
         }, {});
-        setEstudiantesAgrupados(Object.values(agrupados));
+
+        // 💡 ORDEN ALFABÉTICO OBLIGATORIO POR APELLIDOS
+        const listaOrdenada = Object.values(agrupados) as any[];
+        listaOrdenada.sort((a, b) => {
+          const apeA = (a.apellidos || "").toLowerCase().trim();
+          const apeB = (b.apellidos || "").toLowerCase().trim();
+          
+          if (apeA || apeB) {
+            if (apeA !== apeB) return apeA.localeCompare(apeB);
+            const nomA = (a.nombres || "").toLowerCase().trim();
+            const nomB = (b.nombres || "").toLowerCase().trim();
+            return nomA.localeCompare(nomB);
+          }
+          // Fallback por si acaso algún alumno viejo no tiene separados sus apellidos
+          return a.nombre.localeCompare(b.nombre);
+        });
+
+        setEstudiantesAgrupados(listaOrdenada);
       } else {
         setEstudiantesAgrupados([]);
         alert("ℹ️ No hay alumnos registrados en este nivel.");
@@ -2420,7 +2439,6 @@ const materiasPrimariaAlta = [
   };
 
   const handleNotaChange = (idA: number, idM: number, u: string, v: string) => {
-    // 💡 MARCAMOS QUE ESTE ALUMNO TIENE CAMBIOS SIN GUARDAR
     if (!cambiosSinGuardar.includes(idA)) {
       setCambiosSinGuardar((prev) => [...prev, idA]);
     }
@@ -2445,6 +2463,8 @@ const materiasPrimariaAlta = [
   };
 
   const guardarNotasAlumno = async (idAlumno: number) => {
+    if (alumnosGuardando.includes(idAlumno)) return;
+
     const estudiante = estudiantesRef.current.find(
       (e) => e.id_alumno === idAlumno,
     );
@@ -2469,34 +2489,10 @@ const materiasPrimariaAlta = [
 
       if (esPerito) {
         promedios = {
-          u1: Number(
-            calcularPromedioCombinado(
-              estudiante.bloques[1] || [],
-              estudiante.bloques[2] || [],
-              "u1",
-            ),
-          ),
-          u2: Number(
-            calcularPromedioCombinado(
-              estudiante.bloques[1] || [],
-              estudiante.bloques[2] || [],
-              "u2",
-            ),
-          ),
-          u3: Number(
-            calcularPromedioCombinado(
-              estudiante.bloques[1] || [],
-              estudiante.bloques[2] || [],
-              "u3",
-            ),
-          ),
-          u4: Number(
-            calcularPromedioCombinado(
-              estudiante.bloques[1] || [],
-              estudiante.bloques[2] || [],
-              "u4",
-            ),
-          ),
+          u1: Number(calcularPromedioCombinado(estudiante.bloques[1] || [], estudiante.bloques[2] || [], "u1")),
+          u2: Number(calcularPromedioCombinado(estudiante.bloques[1] || [], estudiante.bloques[2] || [], "u2")),
+          u3: Number(calcularPromedioCombinado(estudiante.bloques[1] || [], estudiante.bloques[2] || [], "u3")),
+          u4: Number(calcularPromedioCombinado(estudiante.bloques[1] || [], estudiante.bloques[2] || [], "u4")),
         };
       } else {
         const academicas = estudiante.bloques[1] || [];
@@ -2533,7 +2529,6 @@ const materiasPrimariaAlta = [
 
       await guardarCalificacionesMasivas(datosAEnviar);
       
-      // 💡 GUARDADO EXITOSO: Le quitamos la alerta de que tiene cambios
       setCambiosSinGuardar((prev) => prev.filter((id) => id !== idAlumno));
 
     } catch (error) {
@@ -2543,11 +2538,36 @@ const materiasPrimariaAlta = [
     }
   };
 
+  // 💡 NUEVA FUNCIÓN MASIVA PARA EL BOTÓN "GUARDAR TODAS LAS NOTAS"
+  const guardarTodasLasNotas = async () => {
+    if (cambiosSinGuardar.length === 0) {
+      alert("✅ No hay cambios pendientes por guardar.");
+      return;
+    }
+
+    setGuardandoTodo(true);
+    const idsPendientes = [...cambiosSinGuardar]; 
+    
+    // Guardamos secuencialmente para no saturar la base de datos de golpe
+    for (const idAlumno of idsPendientes) {
+      await guardarNotasAlumno(idAlumno);
+    }
+    
+    setGuardandoTodo(false);
+    alert("✅ ¡Todas las notas modificadas fueron guardadas con éxito!");
+  };
+
   const toggleAlumno = (idAlumno: number) => {
+    // AUTOGUARDADO AL CAMBIAR DE ALUMNO
+    cambiosSinGuardar.forEach((idPendiente) => {
+      guardarNotasAlumno(idPendiente);
+    });
+
+    // ACORDEÓN INTELIGENTE: Solo permite 1 alumno abierto a la vez
     if (expandidos.includes(idAlumno)) {
-      setExpandidos((prev) => prev.filter((i) => i !== idAlumno));
+      setExpandidos([]); 
     } else {
-      setExpandidos((prev) => [...prev, idAlumno]);
+      setExpandidos([idAlumno]); 
     }
   };
 
@@ -2834,15 +2854,28 @@ const materiasPrimariaAlta = [
                   </div>
                 )}
 
-                <div className="flex items-center gap-2 bg-slate-50 text-slate-500 px-4 py-3 rounded-2xl border border-slate-200 shadow-sm">
-                  <div className="w-2 h-2 bg-yellow-400 rounded-full"></div>
+                {/* 💡 BOTÓN GUARDAR TODAS LAS NOTAS (ARRIBA) */}
+                <button
+                  onClick={guardarTodasLasNotas}
+                  disabled={guardandoTodo || cambiosSinGuardar.length === 0}
+                  className={`flex items-center gap-2 px-4 py-3 rounded-2xl border shadow-sm transition-all ${
+                    cambiosSinGuardar.length > 0
+                      ? "bg-yellow-500 text-yellow-900 border-yellow-600 animate-pulse hover:bg-yellow-400 active:scale-95 cursor-pointer"
+                      : "bg-slate-50 text-slate-400 border-slate-200 cursor-not-allowed"
+                  }`}
+                >
+                  {guardandoTodo ? (
+                    <div className="w-3 h-3 border-2 border-current border-t-transparent rounded-full animate-spin"></div>
+                  ) : (
+                    <span>💾</span>
+                  )}
                   <span className="text-[10px] font-black uppercase tracking-wider hidden sm:inline-block">
-                    Guardado Manual
+                    {cambiosSinGuardar.length > 0 ? "Guardar Todas las Notas" : "Todo Guardado"}
                   </span>
                   <span className="text-[10px] font-black uppercase tracking-wider sm:hidden">
-                    Manual
+                    {cambiosSinGuardar.length > 0 ? "Guardar Todo" : "Guardado"}
                   </span>
-                </div>
+                </button>
               </div>
             </div>
           </div>
@@ -2854,7 +2887,6 @@ const materiasPrimariaAlta = [
             est.id_alumno,
           );
           
-          // 💡 VARIABLE PARA SABER SI ESTE ALUMNO TIENE CAMBIOS SIN GUARDAR
           const tieneCambiosSinGuardar = cambiosSinGuardar.includes(est.id_alumno);
           
           const esPreVisual = ["11", "12", "13", "4", "5", "1"].includes(
@@ -2902,7 +2934,6 @@ const materiasPrimariaAlta = [
                   
                   <div className="flex justify-between items-center mb-4 flex-wrap gap-4">
                     
-                    {/* 💡 BOTÓN DE GUARDADO DINÁMICO */}
                     <button
                       onClick={() => guardarNotasAlumno(est.id_alumno)}
                       disabled={estaGuardandoEsteAlumno}
@@ -2935,7 +2966,6 @@ const materiasPrimariaAlta = [
                             <button
                               key={unidad}
                               onClick={() => {
-                                // 💡 BLOQUEO DE IMPRESIÓN INDIVIDUAL
                                 if (tieneCambiosSinGuardar) {
                                   alert("⚠️ Tienes notas sin guardar. Por favor, dale al botón de 'Guardar Cambios' de este alumno antes de imprimir su boleta.");
                                   return;
@@ -3133,6 +3163,33 @@ const materiasPrimariaAlta = [
             </div>
           );
         })}
+
+        {/* 💡 BOTÓN GUARDAR TODAS LAS NOTAS (AL FINAL) */}
+        {estudiantesAgrupados.length > 0 && (
+          <div className="mt-10 flex justify-center">
+            <button
+              onClick={guardarTodasLasNotas}
+              disabled={guardandoTodo || cambiosSinGuardar.length === 0}
+              className={`px-10 py-5 rounded-2xl font-black text-sm md:text-base uppercase tracking-widest shadow-lg flex items-center gap-3 transition-all ${
+                cambiosSinGuardar.length > 0
+                  ? "bg-yellow-500 text-yellow-900 border-4 border-yellow-600 animate-pulse hover:bg-yellow-400 active:scale-95 cursor-pointer"
+                  : "bg-gray-200 text-gray-400 cursor-not-allowed"
+              }`}
+            >
+              {guardandoTodo ? (
+                <>
+                  <div className="w-5 h-5 border-4 border-current border-t-transparent rounded-full animate-spin"></div>
+                  Guardando en la base de datos...
+                </>
+              ) : (
+                <>
+                  <span>💾</span> {cambiosSinGuardar.length > 0 ? "Guardar Todas Las Notas" : "Todo está guardado"}
+                </>
+              )}
+            </button>
+          </div>
+        )}
+
       </main>
 
       <div style={{ display: "none" }}>
